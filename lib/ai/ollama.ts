@@ -112,6 +112,43 @@ ${resumeText}`
   }
 }
 
+const brandedContentPattern =
+  /(vibe\s*judge|roasted?\s+by|generated\s+by|generated\s+with|created\s+by|resume\s+score|the\s+roast|as\s+an\s+ai)/i;
+
+function sanitizeGeneratedCv(content: string) {
+  return content
+    .replace(/```[\s\S]*?(?:```|$)/g, "\n")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/^#{1,6}\s*/gm, "")
+    .split("\n")
+    .filter((line) => !brandedContentPattern.test(line))
+    .join("\n")
+    .replace(/vibe\s*judge/gi, "")
+    .replace(/\.{3,}|…/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+const emailPattern = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
+
+function enforceContactAccuracy(resumeText: string, cv: string) {
+  const sourceEmails = Array.from(new Set((resumeText.match(emailPattern) ?? []).map((email) => email.toLowerCase())));
+  const primaryEmail = sourceEmails[0];
+
+  if (!primaryEmail) return cv;
+
+  const fixed = cv.replace(emailPattern, (match) => (sourceEmails.includes(match.toLowerCase()) ? match : primaryEmail));
+
+  if (!new RegExp(emailPattern.source, "i").test(fixed)) {
+    const lines = fixed.split("\n");
+    lines.splice(1, 0, primaryEmail);
+    return lines.join("\n");
+  }
+
+  return fixed;
+}
+
 export async function generateCvWithOllama(resumeText: string, analysis?: ResumeAnalysis): Promise<string> {
   const apiKey = process.env.OLLAMA_API_KEY;
   const baseUrl = process.env.OLLAMA_BASE_URL ?? "https://ollama.com";
@@ -138,16 +175,16 @@ export async function generateCvWithOllama(resumeText: string, analysis?: Resume
           {
             role: "system",
             content:
-              "You are an expert resume writer. Rewrite the user's CV into a stronger, ATS-friendly CV. Use only facts present in the original resume. Do not invent employers, dates, titles, degrees, metrics, or tools. Where metrics are missing, use bracketed placeholders like [add metric]. Return clean plain text only. Do not use Markdown, tables, pipes, horizontal rules, code fences, bold markers, or heading hashes."
+              "You are an elite executive CV writer trusted by senior leaders at Fortune 500 companies. Rewrite the user's CV into an ultra-professional, impeccably structured, boardroom-ready document.\n\nNon-negotiable rules:\n1. Never mention VibeJudge, AI, models, scores, roasts, feedback, coaching, or this rewriting process anywhere in the output. The CV must read as 100% human-crafted with zero tool branding.\n2. Use only facts present in the original resume. Do not invent employers, job titles, dates, degrees, institutions, certifications, metrics, or technologies.\n3. Leave nothing empty. No bracketed placeholders like [add metric], no TBD, no N/A, no blank sections, no unfinished sentences. When a number is unavailable, express the achievement as a strong qualitative statement instead.\n4. Use exactly this structure: line 1 is the candidate's full name, line 2 is a single contact line (email, phone, city, LinkedIn if present), then these uppercase section headings in order: PROFESSIONAL SUMMARY, CORE COMPETENCIES, PROFESSIONAL EXPERIENCE, EDUCATION. Include CERTIFICATIONS, PROJECTS, LANGUAGES, or AWARDS sections between experience and education only when the resume supports them.\n5. The professional summary is 3 to 4 confident sentences of executive positioning with no first-person pronouns.\n6. Core competencies groups skills into 3 to 5 labeled categories with comma-separated skills.\n7. Each experience entry uses exactly: Job Title | Company | Dates on one line, followed by 3 to 5 result-focused bullet points starting with '- '. Every bullet starts with a decisive action verb and closes with a concrete outcome.\n8. Tone: commanding, polished, corporate-executive. Zero fluff, zero slang, zero humor, no first-person pronouns.\n9. Return clean plain text only. No Markdown, tables, horizontal rules, code fences, asterisks, underscores, backticks, or heading hashes.\n10. Copy every name, email address, phone number, URL, LinkedIn handle, company name, job title, degree, and date character-for-character exactly as written in the resume. Never shorten, merge, split, guess, or autocorrect them. Double-check the email address letter by letter.\n11. Never use ellipses (...), trailing dashes, or unfinished sentences. Every bullet and sentence must be complete from start to finish."
           },
           {
             role: "user",
-            content: `Create an improved CV from this resume.
+            content: `Rewrite this resume into an elite executive CV following your structure rules exactly. Complete every section fully using only real information from the resume; where the resume lacks specifics, write confident qualitative statements instead of leaving anything empty.
 
-Use this roast analysis as guidance:
-${analysis ? JSON.stringify(analysis) : "No structured analysis provided."}
+Internal coaching notes to address (never reference these in the output):
+${analysis ? JSON.stringify(analysis) : "None."}
 
-Original resume text:
+Resume text:
 ${resumeText}`
           }
         ]
@@ -161,7 +198,7 @@ ${resumeText}`
 
     const payload = await response.json();
     const content = payload.message?.content ?? payload.response ?? "";
-    return String(content).trim();
+    return enforceContactAccuracy(resumeText, sanitizeGeneratedCv(String(content)));
   } finally {
     clearTimeout(timeout);
   }

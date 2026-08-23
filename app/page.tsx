@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Send,
   Share2,
+  Star,
   Upload,
   X
 } from "lucide-react";
@@ -96,8 +97,6 @@ const testimonials = [
   ["https://i.pravatar.cc/96?img=56", "My resume stopped rambling and my answers finally sounded prepared."]
 ] as const;
 
-const trustAvatars = ["https://i.pravatar.cc/96?img=5", "https://i.pravatar.cc/96?img=21", "https://i.pravatar.cc/96?img=36", "https://i.pravatar.cc/96?img=61"];
-
 function severityStyles(severity: ResumeProblem["severity"]) {
   if (severity === "high") return "border-ember bg-[#fff3ef] text-ember";
   if (severity === "medium") return "border-[#c58f23] bg-[#fff8e7] text-[#7b5712]";
@@ -116,11 +115,11 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingCv, setIsGeneratingCv] = useState(false);
   const [generatedCv, setGeneratedCv] = useState("");
-  const [generatedTemplate, setGeneratedTemplate] = useState("");
   const [messageIndex, setMessageIndex] = useState(0);
   const [trustCount, setTrustCount] = useState(1270);
   const [toast, setToast] = useState("");
   const [showTipPopup, setShowTipPopup] = useState(false);
+  const [showCvPopup, setShowCvPopup] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
   const uploadSectionRef = useRef<HTMLElement>(null);
 
@@ -159,6 +158,15 @@ export default function Home() {
     const timer = window.setTimeout(() => setToast(""), 2600);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!showCvPopup) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowCvPopup(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showCvPopup]);
 
   const shareText = useMemo(() => {
     const score = analysis?.score ?? fallbackAnalysis.score;
@@ -470,8 +478,8 @@ export default function Home() {
       if (!response.ok) throw new Error(payload.error || "Could not generate CV.");
 
       setGeneratedCv(payload.cv);
-      setGeneratedTemplate(payload.template || "");
       setToast("Generated CV is ready.");
+      setShowCvPopup(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "We could not generate the improved CV right now.");
     } finally {
@@ -487,11 +495,12 @@ export default function Home() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const withPhoto = generatedTemplate.includes("withphoto");
     const knownHeadings = new Set([
       "PROFESSIONAL SUMMARY",
       "SUMMARY",
       "PROFILE",
+      "CORE COMPETENCIES",
+      "COMPETENCIES",
       "CORE SKILLS",
       "SKILLS",
       "TECHNICAL SKILLS",
@@ -499,7 +508,9 @@ export default function Home() {
       "EXPERIENCE",
       "PROJECTS",
       "EDUCATION",
-      "CERTIFICATIONS"
+      "CERTIFICATIONS",
+      "LANGUAGES",
+      "AWARDS"
     ]);
     const cleanedLines = generatedCv
       .replace(/```[\s\S]*?```/g, "")
@@ -507,22 +518,30 @@ export default function Home() {
       .split(/\n/)
       .map((line) => line.trim().replace(/^#+\s*/, ""))
       .filter((line) => line && !/^-{3,}$/.test(line) && !/^\|?[-\s|:]+\|?$/.test(line) && !line.includes("|---"));
-    const firstContentLine = cleanedLines.find((line) => !knownHeadings.has(line.toUpperCase())) || "Improved CV";
-    const contactMatch = firstContentLine.match(/\b(Email|Phone|LinkedIn|GitHub|Portfolio|Website)\b/i);
-    const name = (contactMatch ? firstContentLine.slice(0, contactMatch.index).replace(/[,|]+$/, "") : firstContentLine)
-      .replace(/^Name:\s*/i, "")
-      .slice(0, 58);
-    const contact = contactMatch ? firstContentLine.slice(contactMatch.index).replace(/\s{2,}/g, " ").slice(0, 120) : "";
+    const nameLine = cleanedLines[0] ?? "Curriculum Vitae";
+    const name = nameLine.replace(/^Name:\s*/i, "").slice(0, 90);
+    const contactCandidate = cleanedLines[1] ?? "";
+    const looksLikeContact =
+      /(email|phone|linkedin|github|portfolio|website|@|\+\d{2,}|tel:)/i.test(contactCandidate) &&
+      !knownHeadings.has(contactCandidate.toUpperCase());
+    const contact = looksLikeContact ? contactCandidate.replace(/\s{2,}/g, " ").slice(0, 220) : "";
+    const bodyLines = looksLikeContact ? cleanedLines.slice(2) : cleanedLines.slice(1);
     const sections: Array<{ heading: string; body: string[] }> = [];
     let current: { heading: string; body: string[] } | null = null;
 
-    for (const line of cleanedLines.filter((item) => item !== firstContentLine)) {
+    for (const line of bodyLines) {
       const normalized = line.toUpperCase().replace(/[:]+$/, "");
       const isHeading = knownHeadings.has(normalized) || (line.length <= 34 && /^[A-Z][A-Z\s/&-]+$/.test(line));
 
       if (isHeading) {
-        current = { heading: normalized, body: [] };
-        sections.push(current);
+        const existing = sections.find((section) => section.heading === normalized);
+
+        if (existing) {
+          current = existing;
+        } else {
+          current = { heading: normalized, body: [] };
+          sections.push(current);
+        }
         continue;
       }
 
@@ -534,10 +553,12 @@ export default function Home() {
         sections.push(current);
       }
 
+      if (current.body[current.body.length - 1] === bodyLine) continue;
+
       current.body.push(bodyLine);
     }
 
-    const visibleSections = sections.filter((section) => section.body.length > 0).slice(0, 5);
+    const visibleSections = sections.filter((section) => section.body.length > 0).slice(0, 8);
 
     ctx.fillStyle = "#f4f2ed";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -550,126 +571,93 @@ export default function Home() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    if (withPhoto) {
-      ctx.fillStyle = "#101010";
-      ctx.beginPath();
-      ctx.roundRect(76, 54, 360, 1692, 34);
-      ctx.fill();
-      ctx.fillRect(256, 54, 180, 1692);
+    const contentX = 140;
+    const contentWidth = 1120;
+    const bottomLimit = 1690;
+    const scales = [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64];
 
-      ctx.fillStyle = "#f8d8f3";
-      ctx.beginPath();
-      ctx.arc(256, 230, 96, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#101010";
-      ctx.font = "900 28px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("PHOTO", 256, 240);
-      ctx.textAlign = "left";
+    const measureCanvas = document.createElement("canvas");
+    measureCanvas.width = canvas.width;
+    measureCanvas.height = canvas.height;
+    const measureCtx = measureCanvas.getContext("2d");
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "900 28px Arial";
-      ctx.fillText("VibeJudge", 132, 420);
-      ctx.fillStyle = "#cfcfcf";
-      ctx.font = "700 22px Arial";
-      drawWrappedTextLimited(ctx, "Template selected because your uploaded CV appears to include an image.", 132, 462, 246, 32, 4);
+    if (!measureCtx) return;
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "900 22px Arial";
-      ctx.fillText("FOCUS AREAS", 132, 660);
-      ctx.fillStyle = "#cfcfcf";
-      ctx.font = "600 21px Arial";
-      ["Impact", "Clarity", "ATS keywords", "Interview proof"].forEach((item, index) => {
-        ctx.fillText(item, 132, 710 + index * 42);
-      });
-    }
+    const drawCv = (target: CanvasRenderingContext2D, scale: number) => {
+      let y = 150;
 
-    const contentX = withPhoto ? 500 : 140;
-    const contentWidth = withPhoto ? 730 : 1120;
-    let y = 138;
+      target.fillStyle = "#101010";
+      target.font = `900 ${Math.round(52 * scale)}px Arial`;
+      y = drawWrappedText(target, name || "Curriculum Vitae", contentX, y, contentWidth, 60 * scale) + 14 * scale;
 
-    ctx.fillStyle = "#101010";
-    ctx.font = "900 46px Arial";
-    y = drawWrappedTextLimited(ctx, name || "Improved CV", contentX, y, contentWidth, 54, 2) + 8;
-
-    if (contact) {
-      ctx.fillStyle = "#4b5563";
-      ctx.font = "700 22px Arial";
-      y = drawWrappedTextLimited(ctx, contact, contentX, y, contentWidth, 30, 2) + 20;
-    } else {
-      y += 24;
-    }
-
-    ctx.fillStyle = "#e8502f";
-    ctx.beginPath();
-    ctx.roundRect(contentX, y, 150, 7, 4);
-    ctx.fill();
-    y += 58;
-
-    for (const section of visibleSections) {
-      ctx.fillStyle = "#101010";
-      ctx.font = "900 27px Arial";
-      ctx.fillText(section.heading, contentX, y);
-      y += 17;
-      ctx.strokeStyle = "#dedbd2";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(contentX, y);
-      ctx.lineTo(contentX + contentWidth, y);
-      ctx.stroke();
-      y += 34;
-
-      const linesForSection = section.body.slice(0, section.heading.includes("SKILLS") ? 3 : 4);
-
-      for (const line of linesForSection) {
-        if (section.heading.includes("SKILLS")) {
-          ctx.fillStyle = "#343434";
-          ctx.font = "500 23px Arial";
-          y = drawWrappedTextLimited(ctx, line, contentX, y, contentWidth, 31, 2) + 8;
-        } else {
-          ctx.fillStyle = "#e8502f";
-          ctx.beginPath();
-          ctx.arc(contentX + 8, y - 8, 4, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#343434";
-          ctx.font = "500 23px Arial";
-          y = drawWrappedTextLimited(ctx, line, contentX + 26, y, contentWidth - 26, 31, 3) + 10;
-        }
+      if (contact) {
+        target.fillStyle = "#4b5563";
+        target.font = `600 ${Math.round(23 * scale)}px Arial`;
+        y = drawWrappedText(target, contact, contentX, y, contentWidth, 30 * scale) + 18 * scale;
+      } else {
+        y += 26 * scale;
       }
 
-      y += 22;
+      target.fillStyle = "#e8502f";
+      target.beginPath();
+      target.roundRect(contentX, y, 170 * scale, 7 * scale, 4);
+      target.fill();
+      y += 58 * scale;
 
-      if (y > 1540) break;
+      for (const section of visibleSections) {
+        const isSkills = /SKILL|COMPETENC/.test(section.heading);
+
+        target.fillStyle = "#101010";
+        target.font = `900 ${Math.round(27 * scale)}px Arial`;
+        target.fillText(section.heading, contentX, y);
+        y += 17 * scale;
+        target.strokeStyle = "#dedbd2";
+        target.lineWidth = Math.max(1, 2 * scale);
+        target.beginPath();
+        target.moveTo(contentX, y);
+        target.lineTo(contentX + contentWidth, y);
+        target.stroke();
+        y += 34 * scale;
+
+        for (const line of section.body) {
+          target.font = `500 ${Math.round(23 * scale)}px Arial`;
+
+          if (!isSkills) {
+            target.fillStyle = "#e8502f";
+            target.beginPath();
+            target.arc(contentX + 8, y - 8 * scale, 4 * scale, 0, Math.PI * 2);
+            target.fill();
+          }
+
+          target.fillStyle = "#343434";
+
+          if (isSkills) {
+            y = drawWrappedText(target, line, contentX, y, contentWidth, 31 * scale) + 8 * scale;
+          } else {
+            y = drawWrappedText(target, line, contentX + 26, y, contentWidth - 26, 31 * scale) + 10 * scale;
+          }
+
+          if (y > bottomLimit) return y;
+        }
+
+        y += 24 * scale;
+
+        if (y > bottomLimit) return y;
+      }
+
+      return y;
+    };
+
+    let chosenScale = scales[scales.length - 1];
+
+    for (const scale of scales) {
+      if (drawCv(measureCtx, scale) <= bottomLimit) {
+        chosenScale = scale;
+        break;
+      }
     }
 
-    if (!withPhoto) {
-      ctx.fillStyle = "#fbfaf7";
-      ctx.beginPath();
-      ctx.roundRect(140, 1510, 1120, 116, 24);
-      ctx.fill();
-      ctx.fillStyle = "#101010";
-      ctx.font = "900 26px Arial";
-      ctx.fillText("Template", 178, 1562);
-      ctx.fillStyle = "#4b5563";
-      ctx.font = "700 23px Arial";
-      ctx.fillText(generatedTemplate || "nophoto1.pdf", 178, 1598);
-    } else {
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "900 23px Arial";
-      ctx.fillText(generatedTemplate || "withphoto1.pdf", 132, 1535);
-      ctx.fillStyle = "#cfcfcf";
-      ctx.font = "700 21px Arial";
-      ctx.fillText("Generated by VibeJudge", 132, 1574);
-    }
-
-    if (!withPhoto) {
-      ctx.fillStyle = "#101010";
-      ctx.font = "900 23px Arial";
-      ctx.fillText("Generated by VibeJudge", 140, 1680);
-      ctx.fillStyle = "#6b6259";
-      ctx.font = "700 21px Arial";
-      ctx.fillText("vibejudge.app", 140, 1712);
-    }
+    drawCv(ctx, chosenScale);
 
     downloadCanvas(canvas, "vibejudge-generated-cv.png");
   }
@@ -731,6 +719,76 @@ export default function Home() {
         ) : null}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showCvPopup && generatedCv ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4 backdrop-blur-sm"
+            onClick={() => setShowCvPopup(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your generated CV is ready"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 48, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+              className="relative w-full max-w-md rounded-[2rem] border border-stone-200 bg-white p-8 text-center shadow-soft"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setShowCvPopup(false)}
+                className="focus-ring absolute right-4 top-4 rounded-full p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-ink"
+                aria-label="Close popup"
+              >
+                <X size={18} aria-hidden />
+              </button>
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.15 }}
+                className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edf8f2] text-moss"
+              >
+                <Sparkles size={30} aria-hidden />
+              </motion.div>
+              <h2 className="mt-5 text-3xl font-black uppercase">Your new CV is ready</h2>
+              <p className="mt-3 text-sm leading-6 text-stone-600">
+                Your rewritten, recruiter-ready CV just left the kitchen. Review it, download it, and go win the interview.
+              </p>
+              <div className="mt-6 grid gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCvPopup(false);
+                    window.setTimeout(() => document.getElementById("generated-cv")?.scrollIntoView({ behavior: "smooth" }), 80);
+                  }}
+                  className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-black uppercase text-white transition hover:-translate-y-0.5"
+                >
+                  <FileText size={17} aria-hidden />
+                  View my CV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    downloadGeneratedCv();
+                    setShowCvPopup(false);
+                  }}
+                  className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-ink bg-[#f8d8f3] px-5 py-3 text-sm font-black uppercase text-ink transition hover:-translate-y-0.5"
+                >
+                  <Download size={17} aria-hidden />
+                  Download CV
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
       <aside className="fixed right-5 top-8 z-30 hidden max-h-[calc(100vh-4rem)] w-72 rounded-[2rem] border border-stone-200 bg-white p-5 shadow-soft xl:block">
         <h2 className="text-2xl font-black leading-tight text-ink">
           Fix the CV.
@@ -783,16 +841,9 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-8 text-center sm:px-8 lg:pb-24 lg:pt-14">
         <div className="mx-auto max-w-4xl">
           <div className="mb-6 inline-flex items-center justify-center gap-3 text-sm font-black text-stone-700">
-            <div className="flex -space-x-3" aria-hidden>
-              {trustAvatars.map((src) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt=""
-                  width={38}
-                  height={38}
-                  className="h-10 w-10 rounded-full border-2 border-white bg-white object-cover shadow-sm"
-                />
+            <div className="flex gap-1" aria-hidden>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Star key={index} size={22} className="fill-[#c58f23] text-[#c58f23]" aria-hidden />
               ))}
             </div>
             <span>Trusted by {trustCount.toLocaleString()} professionals and job seekers</span>
@@ -1047,7 +1098,13 @@ export default function Home() {
             </div>
 
             {generatedCv ? (
-              <section className="mt-8 rounded-[2rem] border border-stone-200 bg-white p-7 shadow-soft">
+              <motion.section
+                id="generated-cv"
+                initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 220, damping: 24, delay: 0.1 }}
+                className="mt-8 rounded-[2rem] border border-stone-200 bg-white p-7 shadow-soft"
+              >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-black uppercase tracking-[0.18em] text-stone-500">Generated CV</p>
@@ -1065,7 +1122,7 @@ export default function Home() {
                 <pre className="mt-5 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-2xl border border-stone-200 bg-paper p-5 text-sm leading-7 text-stone-800">
                   {generatedCv}
                 </pre>
-              </section>
+              </motion.section>
             ) : null}
 
             <section className="mt-8">

@@ -6,18 +6,6 @@ import type { ResumeAnalysis } from "@/lib/types";
 
 export const runtime = "nodejs";
 
-function selectTemplate(extension: string, buffer: Buffer) {
-  const lowerExtension = extension.toLowerCase();
-  const hasEmbeddedImage =
-    (lowerExtension === "pdf" && buffer.includes(Buffer.from("/Image"))) ||
-    (lowerExtension === "docx" && buffer.includes(Buffer.from("word/media/")));
-
-  return {
-    hasPhoto: hasEmbeddedImage,
-    template: hasEmbeddedImage ? "withphoto1.pdf" : "nophoto1.pdf"
-  };
-}
-
 function error(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
@@ -45,8 +33,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const selectedTemplate = selectTemplate(validation.extension, buffer);
     const resumeText = await extractResumeText(file, validation.extension);
     const textValidation = validateResumeText(resumeText);
 
@@ -61,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     const cv = await generateCvWithOllama(textValidation.text, analysis);
-    return NextResponse.json({ cv, template: selectedTemplate.template, hasPhoto: selectedTemplate.hasPhoto });
+    return NextResponse.json({ cv });
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "Unknown server error";
 

@@ -31,14 +31,22 @@ export function validateResumeFile(file: File) {
 }
 
 export function validateResumeText(text: string) {
-  const cleaned = text.replace(/\s+/g, " ").trim();
+  const cleaned = text
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ ?\n ?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 
   if (cleaned.length < MIN_RESUME_CHARACTERS) {
     return { ok: false as const, message: "We could not find enough resume text to roast usefully." };
   }
 
   if (cleaned.length > MAX_RESUME_CHARACTERS) {
-    return { ok: true as const, text: cleaned.slice(0, MAX_RESUME_CHARACTERS) };
+    const trimmed = cleaned.slice(0, MAX_RESUME_CHARACTERS);
+    const lastBreak = trimmed.lastIndexOf("\n");
+    const bounded = lastBreak > MAX_RESUME_CHARACTERS * 0.5 ? trimmed.slice(0, lastBreak) : trimmed;
+    return { ok: true as const, text: bounded.trim() };
   }
 
   return { ok: true as const, text: cleaned };
