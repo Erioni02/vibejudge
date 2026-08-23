@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # VibeJudge
 
 VibeJudge is a free AI resume roasting tool for `vibejudge.app`. Users upload or paste a resume, receive a humorous but useful critique, and get concrete fixes before moving on to interview practice with Rehearse.
@@ -55,3 +56,6 @@ Deploy as a standard Next.js application. Configure the Ollama environment varia
 ## Privacy
 
 VibeJudge should process resumes request-by-request: upload, extract, analyze, return results, then discard. Do not log full resume contents or place resume text in client-side URLs or analytics payloads.
+=======
+# vibejudge
+>>>>>>> 41a1d26a3383d3d6960ffcb46104a820e4b78498
