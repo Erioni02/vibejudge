@@ -23,8 +23,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ResumeAnalysis, ResumeProblem } from "@/lib/types";
-
-const rehearseUrl = "https://rehearse-rouge.vercel.app";
+import { trackEvent } from "@/lib/analytics";
+import { rehearseUrl } from "@/lib/site";
 
 const loadingMessages = [
   "Reading your resume...",
@@ -103,8 +103,8 @@ function severityStyles(severity: ResumeProblem["severity"]) {
   return "border-moss bg-[#edf8f2] text-moss";
 }
 
-function UncroppedImage({ src, size = 104 }: { src: string; size?: number }) {
-  return <Image src={src} alt="" width={size} height={size} className="mx-auto object-contain" style={{ width: size, height: size }} />;
+function UncroppedImage({ src, alt, size = 104 }: { src: string; alt: string; size?: number }) {
+  return <Image src={src} alt={alt} width={size} height={size} className="mx-auto object-contain" style={{ width: size, height: size }} />;
 }
 
 export default function Home() {
@@ -179,6 +179,7 @@ export default function Home() {
     setFile(nextFile);
 
     if (nextFile) {
+      trackEvent("resume_upload_started");
       setToast("CV loaded. The judge is ready.");
     }
   }
@@ -187,6 +188,7 @@ export default function Home() {
     setError("");
     setIsLoading(true);
     setMessageIndex(0);
+    trackEvent("resume_upload_completed");
 
     const formData = new FormData();
     if (file) formData.append("resume", file);
@@ -198,9 +200,13 @@ export default function Home() {
       if (!response.ok) throw new Error(payload.error || "Something went wrong.");
 
       setAnalysis(payload.analysis);
+      trackEvent("resume_analysis_completed");
+      trackEvent("resume_score_viewed");
+      trackEvent("resume_roast_viewed");
       setToast("Roast complete. Emotional damage delivered.");
       window.setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch (cause) {
+      trackEvent("resume_analysis_failed");
       setError(cause instanceof Error ? cause.message : "We could not roast your resume right now.");
     } finally {
       setIsLoading(false);
@@ -208,11 +214,13 @@ export default function Home() {
   }
 
   async function copyResult() {
+    trackEvent("share_clicked");
     await navigator.clipboard.writeText(shareText);
     setToast("Result copied.");
   }
 
   async function shareResult() {
+    trackEvent("share_clicked");
     if (navigator.share) {
       await navigator.share({ title: "VibeJudge result", text: shareText, url: "https://vibejudge.app" });
       setToast("Shared.");
@@ -478,6 +486,7 @@ export default function Home() {
       if (!response.ok) throw new Error(payload.error || "Could not generate CV.");
 
       setGeneratedCv(payload.cv);
+      trackEvent("cv_generation_completed");
       setToast("Generated CV is ready.");
       setShowCvPopup(true);
     } catch (cause) {
@@ -804,7 +813,7 @@ export default function Home() {
           ))}
         </ul>
         <a
-          href={rehearseUrl}
+          href={rehearseUrl} onClick={() => trackEvent("rehearse_cta_clicked")}
           className="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-ink bg-[#f8d8f3] px-5 py-3 text-sm font-black text-ink transition hover:bg-ink hover:text-white"
         >
           <Send size={16} aria-hidden />
@@ -832,7 +841,7 @@ export default function Home() {
           <a className="focus-ring rounded-md hover:text-ink" href="#about">
             About
           </a>
-          <a className="focus-ring rounded-md hover:text-ink" href={rehearseUrl}>
+          <a className="focus-ring rounded-md hover:text-ink" href={rehearseUrl} onClick={() => trackEvent("rehearse_cta_clicked")}>
             Rehearse
           </a>
         </nav>
@@ -951,17 +960,17 @@ export default function Home() {
 
             <article className="absolute left-1/2 top-[1%] flex w-60 -translate-x-1/2 flex-col items-center">
               <div className="flex items-end justify-center gap-1">
-                <UncroppedImage src="/manlaptop.png" size={98} />
-                <UncroppedImage src="/womanlaptop.png" size={98} />
+                <UncroppedImage src="/manlaptop.png" alt="Person uploading a resume on a laptop" size={98} />
+                <UncroppedImage src="/womanlaptop.png" alt="Person preparing a resume on a laptop" size={98} />
               </div>
               <h3 className="mt-4 text-2xl font-black tracking-normal">Upload your CV</h3>
             </article>
             <article className="absolute right-[3%] top-[35%] flex w-52 flex-col items-center">
-              <UncroppedImage src="/robot.webp" size={112} />
+              <UncroppedImage src="/robot.webp" alt="AI robot reviewing a resume" size={112} />
               <h3 className="mt-4 text-2xl font-black tracking-normal">AI reads it</h3>
             </article>
-            <article className="absolute bottom-[1%] left-1/2 flex w-52 -translate-x-1/2 flex-col items-center">
-              <UncroppedImage src="/roasted.png" size={112} />
+            <article className="absolute bottom-[1%] left-1/2 flex w-52 flex-col items-center">
+              <UncroppedImage src="/roasted.png" alt="Roasted resume with feedback" size={112} />
               <h3 className="mt-4 text-2xl font-black tracking-normal">Get roasted</h3>
             </article>
             <article className="absolute left-[3%] top-[35%] flex w-52 flex-col items-center">
@@ -981,15 +990,19 @@ export default function Home() {
               <article key={title} className="rounded-3xl border border-stone-200 bg-paper p-6">
                 {visual === "upload" ? (
                   <div className="mx-auto flex items-end justify-center gap-1">
-                    <UncroppedImage src="/manlaptop.png" size={78} />
-                    <UncroppedImage src="/womanlaptop.png" size={78} />
+                    <UncroppedImage src="/manlaptop.png" alt="People uploading a resume on laptops" size={78} />
+                    <UncroppedImage src="/womanlaptop.png" alt="Person preparing a resume on a laptop" size={78} />
                   </div>
                 ) : visual === "chart" ? (
                   <div className="emoji text-6xl leading-none" role="img" aria-hidden>
                     📈
                   </div>
                 ) : (
-                  <UncroppedImage src={visual} size={92} />
+                  <UncroppedImage
+                    src={visual}
+                    alt={visual === "/robot.webp" ? "AI robot reviewing a resume" : "Roasted resume with feedback"}
+                    size={92}
+                  />
                 )}
                 <h3 className="mt-4 text-2xl font-black">{title}</h3>
               </article>
@@ -1210,7 +1223,7 @@ export default function Home() {
                 <p className="mt-4 leading-7 text-stone-300">
                   Practice realistic job interviews with Rehearse after you apply the VibeJudge fixes.
                 </p>
-                <a href={rehearseUrl} className="focus-ring mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black uppercase text-ink">
+                <a href={rehearseUrl} onClick={() => trackEvent("rehearse_cta_clicked")} className="focus-ring mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black uppercase text-ink">
                   Practice my interview
                   <Send size={17} aria-hidden />
                 </a>
@@ -1253,7 +1266,7 @@ export default function Home() {
             ))}
           </ul>
           <a
-            href={rehearseUrl}
+            href={rehearseUrl} onClick={() => trackEvent("rehearse_cta_clicked")}
             className="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-ink bg-[#f8d8f3] px-5 py-3 text-sm font-black text-ink transition hover:bg-ink hover:text-white"
           >
             <Send size={16} aria-hidden />
@@ -1265,6 +1278,38 @@ export default function Home() {
                 <img src={src} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full object-cover" />
                 <blockquote className="text-sm font-semibold leading-6 text-stone-700">&quot;{quote}&quot;</blockquote>
               </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-stone-200 bg-white px-5 py-14 sm:px-8" aria-labelledby="resources-heading">
+        <div className="mx-auto max-w-6xl">
+          <h2 id="resources-heading" className="text-3xl font-black uppercase text-ink">
+            Resume resources
+          </h2>
+          <p className="mt-3 max-w-2xl leading-7 text-stone-600">
+            Free guides, examples, and deep dives to make your resume impossible to ignore.
+          </p>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { href: "/ai-resume-checker", title: "AI Resume Checker", body: "How the instant resume check works." },
+              { href: "/free-resume-checker", title: "Free Resume Checker", body: "What free includes. No signup needed." },
+              { href: "/resume-review", title: "Resume Review", body: "The six-area review checklist." },
+              { href: "/resume-roast", title: "Resume Roast", body: "Honest feedback with the roast format." },
+              { href: "/resume-feedback", title: "Resume Feedback", body: "Turn feedback into a fix list." },
+              { href: "/ats-resume-checker", title: "ATS Resume Checker", body: "See what the robots see." },
+              { href: "/resume-examples", title: "Resume Examples", body: "Examples for 20+ roles and stages." },
+              { href: "/guides", title: "Resume Guides", body: "Bullet points, summaries, ATS, gaps." }
+            ].map((resource) => (
+              <a
+                key={resource.href}
+                href={resource.href}
+                className="focus-ring group rounded-3xl border border-stone-200 bg-paper p-5 transition hover:border-ink"
+              >
+                <span className="block font-black group-hover:text-ember">{resource.title}</span>
+                <span className="mt-2 block text-sm leading-6 text-stone-600">{resource.body}</span>
+              </a>
             ))}
           </div>
         </div>
@@ -1282,7 +1327,7 @@ export default function Home() {
           <nav className="flex flex-wrap gap-4 text-sm font-semibold text-stone-600" aria-label="Footer">
             <a href="#">Home</a>
             <a href="#how-it-works">How it works</a>
-            <a href={rehearseUrl}>Rehearse</a>
+            <a href={rehearseUrl} onClick={() => trackEvent("rehearse_cta_clicked")}>Rehearse</a>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
           </nav>

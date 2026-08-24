@@ -1,4 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Terms of Service",
+  description:
+    "Terms for using VibeJudge: automated resume feedback for informational purposes, free of charge, with no guarantee of hiring outcomes.",
+  path: "/terms"
+});
 
 export default function TermsPage() {
   return (

@@ -1,4 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How VibeJudge handles resume data: processed per request, analyzed server-side, and discarded after analysis. No accounts, no storage, no resume text in analytics.",
+  path: "/privacy"
+});
 
 export default function PrivacyPage() {
   return (

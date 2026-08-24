@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { JsonLd } from "@/components/json-ld";
+import { webAppJsonLd } from "@/lib/seo";
+import { siteName, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -9,26 +12,29 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://vibejudge.app"),
-  title: "VibeJudge - Get Your Resume Roasted by AI",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Free AI Resume Checker & Resume Roast | VibeJudge",
+    template: `%s | ${siteName}`
+  },
   description:
-    "Upload your resume and get brutally honest AI feedback, actionable fixes, and a score. Free, no signup required.",
+    "Upload your resume and get brutally honest AI feedback, a resume score, ATS analysis, and actionable improvements. Free, no signup required.",
   alternates: {
-    canonical: "https://vibejudge.app"
+    canonical: siteUrl
   },
   openGraph: {
-    title: "VibeJudge - Get Your Resume Roasted by AI",
+    title: "Free AI Resume Checker & Resume Roast | VibeJudge",
     description:
-      "Free AI resume feedback with a useful roast, concrete fixes, and an interview-practice next step.",
-    url: "https://vibejudge.app",
-    siteName: "VibeJudge",
-    images: [{ url: "/cv.png", width: 512, height: 512, alt: "VibeJudge logo" }],
+      "Upload your resume and get brutally honest AI feedback, a resume score, ATS analysis, and actionable fixes in seconds. Free, no signup required.",
+    url: siteUrl,
+    siteName,
+    images: [{ url: "/cv.png", width: 512, height: 512, alt: `${siteName} logo` }],
     type: "website"
   },
   twitter: {
     card: "summary",
-    title: "VibeJudge - Get Your Resume Roasted by AI",
-    description: "Upload your resume. Get roasted. Fix it.",
+    title: "Free AI Resume Checker & Resume Roast | VibeJudge",
+    description: "Upload your resume. Get roasted. Fix what matters. Free, no signup required.",
     images: ["/cv.png"]
   },
   icons: {
@@ -38,6 +44,7 @@ export const metadata: Metadata = {
   },
   keywords: [
     "AI resume checker",
+    "free resume checker",
     "resume roast",
     "resume feedback",
     "free resume review",
@@ -51,7 +58,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body>{children}</body>
+      <body>
+        <JsonLd data={webAppJsonLd()} />
+        {children}
+      </body>
     </html>
   );
 }
