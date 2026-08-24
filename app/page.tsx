@@ -849,7 +849,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-8 text-center sm:px-8 lg:pb-24 lg:pt-14">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-6 inline-flex items-center justify-center gap-3 text-sm font-black text-stone-700">
+          <div className="mb-6 inline-flex flex-col items-center justify-center gap-2 text-center text-sm font-black text-stone-700 sm:flex-row sm:gap-3 sm:text-left">
             <div className="flex gap-1" aria-hidden>
               {Array.from({ length: 5 }).map((_, index) => (
                 <Star key={index} size={22} className="fill-[#c58f23] text-[#c58f23]" aria-hidden />
@@ -857,7 +857,7 @@ export default function Home() {
             </div>
             <span>Trusted by {trustCount.toLocaleString()} professionals and job seekers</span>
           </div>
-          <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[0.94] tracking-normal text-ink sm:text-7xl">
+          <h1 className="mx-auto max-w-4xl text-4xl font-black uppercase leading-[0.94] tracking-normal text-ink sm:text-6xl md:text-7xl">
             Your resume is embarrassing. Let&apos;s find out why.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-stone-700 sm:text-xl">
