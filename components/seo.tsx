@@ -73,12 +73,28 @@ export function SeoHeader() {
             Roasts
           </Link>
         </nav>
-        <Link
-          href="/#upload"
-          className="focus-ring inline-flex items-center rounded-full bg-ink px-4 py-2 text-xs font-black uppercase text-white transition hover:-translate-y-0.5"
-        >
-          Roast my resume
-        </Link>
+        <div className="flex items-center gap-4">
+          <a
+            href="https://www.producthunt.com/products/vibejudge?utm_source=badge-follow&utm_medium=badge&utm_source=badge-vibejudge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring hidden rounded-lg md:inline-block"
+          >
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1301141&theme=light"
+              alt="VibeJudge - AI that brutally roasts your resume | Product Hunt"
+              className="h-auto w-[180px] lg:w-[250px]"
+              width={250}
+              height={54}
+            />
+          </a>
+          <Link
+            href="/#upload"
+            className="focus-ring inline-flex items-center rounded-full bg-ink px-4 py-2 text-xs font-black uppercase text-white transition hover:-translate-y-0.5"
+          >
+            Roast my resume
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -96,6 +112,20 @@ export function SeoFooter() {
           <p className="mt-3 max-w-xs text-sm leading-6 text-stone-500">
             Free AI resume checker. Upload, get roasted, fix what matters.
           </p>
+          <a
+            href="https://www.producthunt.com/products/vibejudge?utm_source=badge-follow&utm_medium=badge&utm_source=badge-vibejudge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring mt-4 inline-block rounded-lg"
+          >
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1301141&theme=light"
+              alt="VibeJudge - AI that brutally roasts your resume | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+            />
+          </a>
         </div>
         <nav className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm font-semibold text-stone-600 sm:grid-cols-3" aria-label="Footer">
           {footerNav.map((item) => (

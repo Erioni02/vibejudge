@@ -845,6 +845,20 @@ export default function Home() {
             Rehearse
           </a>
         </nav>
+        <a
+          href="https://www.producthunt.com/products/vibejudge?utm_source=badge-follow&utm_medium=badge&utm_source=badge-vibejudge"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="focus-ring inline-block rounded-lg"
+        >
+          <img
+            src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1301141&theme=light"
+            alt="VibeJudge - AI that brutally roasts your resume | Product Hunt"
+            className="h-auto w-[180px] sm:w-[250px]"
+            width={250}
+            height={54}
+          />
+        </a>
       </header>
 
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-8 text-center sm:px-8 lg:pb-24 lg:pt-14">
@@ -1323,6 +1337,20 @@ export default function Home() {
               <span className="font-black">VibeJudge</span>
             </div>
             <p className="mt-2 text-sm text-stone-500">AI-powered resume feedback without the corporate BS.</p>
+            <a
+              href="https://www.producthunt.com/products/vibejudge?utm_source=badge-follow&utm_medium=badge&utm_source=badge-vibejudge"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-ring mt-4 inline-block rounded-lg"
+            >
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1301141&theme=light"
+                alt="VibeJudge - AI that brutally roasts your resume | Product Hunt"
+                width={250}
+                height={54}
+                loading="lazy"
+              />
+            </a>
           </div>
           <nav className="flex flex-wrap gap-4 text-sm font-semibold text-stone-600" aria-label="Footer">
             <a href="#">Home</a>

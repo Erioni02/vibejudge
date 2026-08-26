@@ -1,5 +1,7 @@
 # VibeJudge
 
+<a href="https://www.producthunt.com/products/vibejudge?utm_source=badge-follow&utm_medium=badge&utm_source=badge-vibejudge" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1301141&theme=light" alt="VibeJudge - AI&#0032;that&#0032;brutally&#0032;roasts&#0032;your&#0032;resume | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 VibeJudge is a free AI resume roasting tool for `vibejudge.app`. Users upload or paste a resume, receive a humorous but useful critique, and get concrete fixes before moving on to interview practice with Rehearse.
 
 ## Features
