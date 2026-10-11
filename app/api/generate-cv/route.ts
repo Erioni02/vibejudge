@@ -7,6 +7,8 @@ import type { ResumeAnalysis } from "@/lib/types";
 import { clientIp, createRateLimiter } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
+// Leave room for the AI failover chain (57s budget).
+export const maxDuration = 60;
 
 const rateLimit = createRateLimiter({ max: 6, windowMs: 60 * 60 * 1000 });
 

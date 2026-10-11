@@ -6,6 +6,8 @@ import { validateResumeFile, validateResumeText } from "@/lib/validation/resume"
 import { clientIp, createRateLimiter } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
+// Leave room for the AI failover chain (57s budget).
+export const maxDuration = 60;
 
 const rateLimit = createRateLimiter({ max: 8, windowMs: 60 * 60 * 1000 });
 

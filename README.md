@@ -44,22 +44,24 @@ Fill in `.env.local` (see `.env.example`):
 AI_PROVIDER_ORDER=nvidia,ollama,opencode
 
 NVIDIA_API_KEYS=key1,key2,key3
-NVIDIA_MODEL=deepseek-ai/deepseek-v4.1-flash
+NVIDIA_MODELS=deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5.3-flash,nvidia/nemotron-3-super-120b-a12b
 
-OLLAMA_API_KEYS=key1,key2
-OLLAMA_MODEL=gpt-oss:120b-cloud
+OLLAMA_API_KEYS=key1,key2,key3
+OLLAMA_MODELS=gemma4:31b,gpt-oss:20b,nemotron-3-nano:30b
 
-OPENCODE_API_KEYS=key1,key2
-OPENCODE_MODEL=        # a model id from https://opencode.ai/zen/v1/models
+OPENCODE_API_KEYS=key1,key2,key3
+OPENCODE_MODELS=nemotron-3.5-lightning-free,ling-3.1-flash-free,mimo-v2.6-flash-free
 ```
 
 Never expose keys with a `NEXT_PUBLIC_` prefix. All AI calls happen server-side.
 
 ## AI failover
 
-`lib/ai/llm.ts` tries providers in `AI_PROVIDER_ORDER`, and each provider's keys in order. An attempt fails over to the next key/provider on network errors, timeouts (25s per attempt, 55s total), HTTP errors, or output that fails validation (bad JSON, schema mismatch, too-short CV). A key that fails twice is skipped for 2 minutes; a 429 parks it immediately; bad keys (401/403) or retired models (404/410) are parked for 30 minutes. Cooling-down keys remain a last resort, so the chain never fully locks itself out. Server logs show which provider served each request (`[ai] analyze ok via ollama …`).
+`lib/ai/llm.ts` walks **provider → model → key**: model 1 on every key, then model 2, then model 3; if all of a provider's models fail, the next provider in `AI_PROVIDER_ORDER` takes over. An attempt fails over on network errors, timeouts (30s per attempt, 57s total, `maxDuration = 60` on the routes), HTTP errors, or output that fails validation (bad JSON, schema mismatch, too-short CV).
 
-Providers with no keys (or, for OpenCode, no `OPENCODE_MODEL`) are skipped. Check each provider's terms: free tiers are often not licensed for production traffic.
+Health is tracked so users don't wait on known-broken things: a bad key (401/403) is skipped for every model for 30 minutes; a retired model (404/410) is skipped for every key for 30 minutes; anything else gets 2 strikes (429: 1) before a 2-minute cool-down. Parked attempts remain a last resort. Server logs show what served each request (`[ai] analyze ok via ollama/gemma4:31b in 3989ms`).
+
+Order models fastest-first: measured on Ollama Cloud, a full roast took ~5–13s on `gemma4:31b`, ~21s on `gpt-oss:20b`, and ~35s on `nemotron-3-nano:30b` (a reasoning model, which usually exceeds the 30s attempt limit). Check each provider's terms: free tiers are often not licensed for production traffic.
 
 ## Development
 
