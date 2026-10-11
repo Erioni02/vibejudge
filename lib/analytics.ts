@@ -7,7 +7,11 @@ export type FunnelEvent =
   | "resume_roast_viewed"
   | "cv_generation_completed"
   | "rehearse_cta_clicked"
-  | "share_clicked";
+  | "share_clicked"
+  | "roast_card_downloaded"
+  | "cv_generation_started"
+  | "cv_generation_failed"
+  | "cv_downloaded";
 
 export function trackEvent(event: FunnelEvent) {
   if (typeof window === "undefined") return;

@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque, Instrument_Serif, Inter } from "next/font/google";
 import { JsonLd } from "@/components/json-ld";
 import { webAppJsonLd } from "@/lib/seo";
 import { siteName, siteUrl } from "@/lib/site";
@@ -11,53 +11,70 @@ const inter = Inter({
   display: "swap"
 });
 
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+  display: "swap"
+});
+
+const serif = Instrument_Serif({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap"
+});
+
+const defaultTitle = "VibeJudge — Free AI CV Roast & CV Generator";
+const defaultDescription =
+  "Upload your CV and get a brutally honest AI roast with a score and specific fixes. Download the roast or generate a brand-new CV. Free, no account needed.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Free AI Resume Checker & Resume Roast | VibeJudge",
+    default: defaultTitle,
     template: `%s | ${siteName}`
   },
-  description:
-    "Upload your resume and get brutally honest AI feedback, a resume score, ATS analysis, and actionable improvements. Free, no signup required.",
+  description: defaultDescription,
+  applicationName: siteName,
   alternates: {
     canonical: siteUrl
   },
   openGraph: {
-    title: "Free AI Resume Checker & Resume Roast | VibeJudge",
-    description:
-      "Upload your resume and get brutally honest AI feedback, a resume score, ATS analysis, and actionable fixes in seconds. Free, no signup required.",
+    title: defaultTitle,
+    description: defaultDescription,
     url: siteUrl,
     siteName,
-    images: [{ url: "/cv.png", width: 512, height: 512, alt: `${siteName} logo` }],
-    type: "website"
+    type: "website",
+    locale: "en_US"
   },
   twitter: {
-    card: "summary",
-    title: "Free AI Resume Checker & Resume Roast | VibeJudge",
-    description: "Upload your resume. Get roasted. Fix what matters. Free, no signup required.",
-    images: ["/cv.png"]
-  },
-  icons: {
-    icon: "/cv.png",
-    shortcut: "/cv.png",
-    apple: "/cv.png"
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: "Your CV is lying to you. Get a brutally honest AI roast, then generate a better CV. Free, no account."
   },
   keywords: [
+    "CV roast",
+    "resume roast",
+    "AI CV checker",
     "AI resume checker",
     "free resume checker",
-    "resume roast",
+    "AI CV generator",
     "resume feedback",
-    "free resume review",
-    "AI resume reviewer",
-    "resume analyzer",
-    "resume critique",
     "ATS resume checker"
   ]
 };
 
+export const viewport: Viewport = {
+  themeColor: "#f7f4ee",
+  width: "device-width",
+  initialScale: 1
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${display.variable} ${serif.variable}`}>
       <body>
         <JsonLd data={webAppJsonLd()} />
         {children}

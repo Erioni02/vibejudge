@@ -2,16 +2,21 @@
 
 <a href="https://www.producthunt.com/products/vibejudge?utm_source=badge-follow&utm_medium=badge&utm_source=badge-vibejudge" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1301141&theme=light" alt="VibeJudge - AI&#0032;that&#0032;brutally&#0032;roasts&#0032;your&#0032;resume | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-VibeJudge is a free AI resume roasting tool for `vibejudge.app`. Users upload or paste a resume, receive a humorous but useful critique, and get concrete fixes before moving on to interview practice with Rehearse.
+VibeJudge is a free AI CV platform for `vibejudge.app` with one job: roast your CV, download the roast, or generate a better CV.
+
+1. **Upload a CV** (PDF, DOCX, TXT, or pasted text) and get a brutally honest, specific, useful roast with a score.
+2. **Download the roast** as a privacy-safe share card (PNG) — no name, contact details, or CV text.
+3. **Generate a new CV** with AI (with or without the roast as input), edit it, and download it as a text-based PDF or PNG.
 
 ## Features
 
 - No authentication, signup, payments, or dashboard
-- PDF, DOCX, and TXT resume intake
+- PDF, DOCX, TXT upload (drag and drop) or pasted text, with client- and server-side validation
 - Server-side text extraction and Ollama analysis
-- Structured JSON response rendering
-- Resume score, roast, problems, quick wins, rewrite examples, sharing, retry, and Rehearse CTA
-- AI-generated clean CV download
+- Structured results: score, verdict, roast, strengths, problems by severity, feedback by category, before/after rewrites, quick-win checklist, final verdict
+- Share card (1080×1350 PNG) with an optional "score only" mode, native share where supported
+- AI-generated CV rendered as a document; editable; downloadable as ATS-readable PDF (jsPDF, lazy-loaded) or PNG
+- Loading, cancel, error, and retry states for both AI calls; per-IP fair-use limits on both AI routes
 - Basic file validation, request limits, timeout handling, and friendly error states
 - SEO metadata, Open Graph metadata, JSON-LD structured data, sitemap, and robots.txt
 - Programmatic SEO: landing pages, resume examples, guides, and roast pages
@@ -21,8 +26,8 @@ VibeJudge is a free AI resume roasting tool for `vibejudge.app`. Users upload or
 - Next.js (App Router)
 - TypeScript
 - React
-- Tailwind CSS
-- Framer Motion
+- Tailwind CSS (design tokens in `tailwind.config.ts`, component classes in `app/globals.css`)
+- jsPDF (client-side PDF export, dynamically imported)
 - Ollama API with `gpt-oss:120b-cloud`
 
 ## Setup
@@ -39,7 +44,6 @@ Fill in `.env.local`:
 OLLAMA_API_KEY=
 OLLAMA_BASE_URL=https://ollama.com
 OLLAMA_MODEL=gpt-oss:120b-cloud
-REHEARSE_URL=https://rehearse-rouge.vercel.app
 ```
 
 Never expose `OLLAMA_API_KEY` with a `NEXT_PUBLIC_` prefix. AI calls happen in `app/api/analyze/route.ts`.
@@ -50,6 +54,29 @@ Never expose `OLLAMA_API_KEY` with a `NEXT_PUBLIC_` prefix. AI calls happen in `
 npm run dev
 npm run build
 npm run start
+npm run lint
+npm run typecheck
+```
+
+## Design system
+
+- **Type**: Bricolage Grotesque (display), Inter (UI/body), Instrument Serif italic (roast lines and verdicts).
+- **Color**: warm paper neutrals (`paper`, `line`, `ink`), one accent (`ember`), and two semantic colors (`moss` = fixed/good, `amber` = caution).
+- **Components**: `.btn` (+ `btn-primary`, `btn-dark`, `btn-secondary`, `btn-ghost`, sizes), `.card`, `.eyebrow`, `.chip`, `.link`, `.section`.
+- Score bands and severity styles live in `lib/score.ts` so the UI, demo, and share card agree.
+
+## Code map
+
+```text
+app/page.tsx                    Homepage (server component)
+components/home/roast-studio    Upload → roast → generate state machine (client)
+components/home/upload-panel    Dropzone / paste text, loading, errors
+components/roast/*              Score dial, roast report, share panel
+components/cv/*                 Generated CV document + workspace (edit, PDF/PNG/copy)
+components/site/*               Shared header, footer, logo
+lib/cv/parse.ts                 Plain-text CV → structured document
+lib/export/*                    Roast card, CV PDF/PNG renderers
+lib/server/rate-limit.ts        Per-IP limiter used by both AI routes
 ```
 
 ## URL Architecture
@@ -91,7 +118,7 @@ All page data lives in `data/`. Adding a new resume example, guide, or roast pag
 - **Headings**: exactly one H1 per page, logical H2/H3 below.
 - **Internal linking**: homepage links to all hubs; examples cross-link related roles and guides; guides link to examples and tools; all links are crawlable `<a>`/`<Link>` elements with breadcrumbs.
 - **Privacy of results**: analysis results are client-side state with no URL. Resume text never enters URLs, metadata, sitemaps, or analytics payloads. Uploaded resumes are processed per request and discarded.
-- **Analytics**: funnel events (`lib/analytics.ts`) post to `/api/track` via `navigator.sendBeacon`: `resume_upload_started`, `resume_upload_completed`, `resume_analysis_completed`, `resume_analysis_failed`, `resume_score_viewed`, `resume_roast_viewed`, `cv_generation_completed`, `rehearse_cta_clicked`, `share_clicked`. Only event names are sent; never resume text.
+- **Analytics**: funnel events (`lib/analytics.ts`) post to `/api/track` via `navigator.sendBeacon`: `resume_upload_started`, `resume_upload_completed`, `resume_analysis_completed`, `resume_analysis_failed`, `resume_score_viewed`, `resume_roast_viewed`, `cv_generation_started`, `cv_generation_completed`, `cv_generation_failed`, `cv_downloaded`, `roast_card_downloaded`, `share_clicked`. Only event names are sent; never resume text.
 
 ## Google Search Console Setup
 

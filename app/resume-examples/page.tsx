@@ -25,16 +25,16 @@ export default function ResumeExamplesPage() {
 
   return (
     <ContentShell>
-      <nav aria-label="Breadcrumb" className="text-sm font-semibold text-stone-500">
+      <nav aria-label="Breadcrumb" className="text-[13px] font-medium text-ink-3">
         <Link href="/" className="hover:text-ink">
           Home
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-stone-700">Resume Examples</span>
+        <span className="text-ink-2">Resume Examples</span>
       </nav>
 
-      <h1 className="mt-6 text-4xl font-black uppercase leading-tight sm:text-5xl">Resume Examples by Role</h1>
-      <p className="mt-5 text-xl leading-8 text-stone-700">
+      <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">Resume Examples by Role</h1>
+      <p className="mt-5 text-xl leading-8 text-ink-2">
         Each example page includes a full sample resume, a professional summary you can learn from, bad-versus-good
         bullet rewrites with explanations, role-specific ATS keywords, formatting tips, and the mistakes that get that
         role&apos;s resumes rejected.
@@ -42,7 +42,7 @@ export default function ResumeExamplesPage() {
 
       {categories.map((category) => (
         <section key={category} className="mt-12">
-          <h2 className="text-2xl font-black uppercase">{categoryLabels[category]}</h2>
+          <h2 className="font-display text-2xl font-semibold tracking-tight">{categoryLabels[category]}</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {resumeExamples
               .filter((example) => example.category === category)
@@ -50,10 +50,10 @@ export default function ResumeExamplesPage() {
                 <Link
                   key={example.slug}
                   href={`/resume-examples/${example.slug}`}
-                  className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:border-ink"
+                  className="group rounded-2xl border border-line bg-white p-5 transition hover:border-ink"
                 >
-                  <h3 className="font-black group-hover:text-ember">{example.role} resume example →</h3>
-                  <p className="mt-2 text-sm leading-6 text-stone-600">{example.introduction.split(". ")[0]}.</p>
+                  <h3 className="font-semibold group-hover:text-ember">{example.role} resume example →</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink-2">{example.introduction.split(". ")[0]}.</p>
                 </Link>
               ))}
           </div>
@@ -68,25 +68,25 @@ export default function ResumeExamplesPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Keep reading</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Keep reading</h2>
         <ul className="mt-4 grid gap-3 text-sm font-semibold sm:grid-cols-2">
           <li>
-            <Link href="/guides" className="text-stone-700 hover:text-ink">
+            <Link href="/guides" className="text-ink-2 hover:text-ink">
               Resume guides: writing, ATS, bullets, and more →
             </Link>
           </li>
           <li>
-            <Link href="/resume-roast" className="text-stone-700 hover:text-ink">
+            <Link href="/resume-roast" className="text-ink-2 hover:text-ink">
               Resume roasts by role: weak bullets, rebuilt →
             </Link>
           </li>
           <li>
-            <Link href="/guides/how-to-write-a-resume" className="text-stone-700 hover:text-ink">
+            <Link href="/guides/how-to-write-a-resume" className="text-ink-2 hover:text-ink">
               How to write a resume, step by step →
             </Link>
           </li>
           <li>
-            <Link href="/guides/ats-resume-guide" className="text-stone-700 hover:text-ink">
+            <Link href="/guides/ats-resume-guide" className="text-ink-2 hover:text-ink">
               Passing ATS: the complete guide →
             </Link>
           </li>

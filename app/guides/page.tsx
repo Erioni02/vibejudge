@@ -13,16 +13,16 @@ export const metadata = pageMetadata({
 export default function GuidesPage() {
   return (
     <ContentShell>
-      <nav aria-label="Breadcrumb" className="text-sm font-semibold text-stone-500">
+      <nav aria-label="Breadcrumb" className="text-[13px] font-medium text-ink-3">
         <Link href="/" className="hover:text-ink">
           Home
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-stone-700">Guides</span>
+        <span className="text-ink-2">Guides</span>
       </nav>
 
-      <h1 className="mt-6 text-4xl font-black uppercase leading-tight sm:text-5xl">Resume Guides</h1>
-      <p className="mt-5 text-xl leading-8 text-stone-700">
+      <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">Resume Guides</h1>
+      <p className="mt-5 text-xl leading-8 text-ink-2">
         No filler, no 2,000-word warmups. Each guide is a working document with formulas, before/after examples, and
         checklists you can apply to your resume the same day.
       </p>
@@ -32,11 +32,11 @@ export default function GuidesPage() {
           <Link
             key={guide.slug}
             href={`/guides/${guide.slug}`}
-            className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:border-ink"
+            className="group rounded-2xl border border-line bg-white p-5 transition hover:border-ink"
           >
-            <h2 className="font-black leading-6 group-hover:text-ember">{guide.title} →</h2>
-            <p className="mt-2 text-sm leading-6 text-stone-600">{guide.description}</p>
-            <p className="mt-3 text-xs font-black uppercase tracking-wide text-stone-400">
+            <h2 className="font-semibold leading-6 group-hover:text-ember">{guide.title} →</h2>
+            <p className="mt-2 text-sm leading-6 text-ink-2">{guide.description}</p>
+            <p className="mt-3 eyebrow">
               {guide.readingMinutes} min read
             </p>
           </Link>
@@ -51,15 +51,15 @@ export default function GuidesPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Related resources</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Related resources</h2>
         <ul className="mt-4 grid gap-3 text-sm font-semibold sm:grid-cols-2">
           <li>
-            <Link href="/resume-examples" className="text-stone-700 hover:text-ink">
+            <Link href="/resume-examples" className="text-ink-2 hover:text-ink">
               Resume examples by role →
             </Link>
           </li>
           <li>
-            <Link href="/resume-roast" className="text-stone-700 hover:text-ink">
+            <Link href="/resume-roast" className="text-ink-2 hover:text-ink">
               Resume roasts by role →
             </Link>
           </li>

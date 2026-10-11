@@ -11,7 +11,11 @@ const allowedEvents = new Set([
   "resume_roast_viewed",
   "cv_generation_completed",
   "rehearse_cta_clicked",
-  "share_clicked"
+  "share_clicked",
+  "roast_card_downloaded",
+  "cv_generation_started",
+  "cv_generation_failed",
+  "cv_downloaded"
 ]);
 
 const counts = new Map<string, number>();

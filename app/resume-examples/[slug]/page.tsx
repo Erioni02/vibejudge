@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ContentShell, RehearseCta, ToolCta } from "@/components/seo";
+import { ContentShell, CvCta, ToolCta } from "@/components/seo";
 import { JsonLd } from "@/components/json-ld";
 import { breadcrumbJsonLd, faqJsonLd, pageMetadata } from "@/lib/seo";
 import { getResumeExample, resumeExamples } from "@/data/resume-examples";
@@ -49,7 +49,7 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
           faqJsonLd(example.faq)
         ]}
       />
-      <nav aria-label="Breadcrumb" className="text-sm font-semibold text-stone-500">
+      <nav aria-label="Breadcrumb" className="text-[13px] font-medium text-ink-3">
         <Link href="/" className="hover:text-ink">
           Home
         </Link>
@@ -58,86 +58,86 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
           Resume Examples
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-stone-700">{example.role}</span>
+        <span className="text-ink-2">{example.role}</span>
       </nav>
 
-      <h1 className="mt-6 text-4xl font-black uppercase leading-tight sm:text-5xl">
+      <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
         {example.role} Resume Example
       </h1>
-      <p className="mt-5 text-xl leading-8 text-stone-700">{example.introduction}</p>
+      <p className="mt-5 text-xl leading-8 text-ink-2">{example.introduction}</p>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Example {example.role.toLowerCase()} resume</h2>
-      <pre className="mt-5 overflow-x-auto whitespace-pre-wrap rounded-2xl border border-stone-200 bg-white p-6 text-sm leading-7 text-stone-800">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Example {example.role.toLowerCase()} resume</h2>
+      <pre className="mt-5 overflow-x-auto whitespace-pre-wrap rounded-2xl border border-line bg-white p-6 text-sm leading-7 text-ink">
         {example.exampleResume}
       </pre>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Professional summary example</h2>
-      <blockquote className="mt-5 rounded-2xl border border-stone-200 bg-white p-6 leading-7">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Professional summary example</h2>
+      <blockquote className="mt-5 rounded-2xl border border-line bg-white p-6 leading-7">
         &quot;{example.summaryExample.text}&quot;
       </blockquote>
-      <p className="mt-4 leading-7 text-stone-700">
-        <strong className="font-black">Why it works:</strong> {example.summaryExample.why}
+      <p className="mt-4 leading-7 text-ink-2">
+        <strong className="font-semibold">Why it works:</strong> {example.summaryExample.why}
       </p>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Skills to include</h2>
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Skills to include</h2>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {example.skills.map((group) => (
-          <div key={group.label} className="rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="font-black">{group.label}</h3>
-            <p className="mt-2 text-sm leading-6 text-stone-600">{group.items.join(", ")}</p>
+          <div key={group.label} className="rounded-2xl border border-line bg-white p-5">
+            <h3 className="font-semibold">{group.label}</h3>
+            <p className="mt-2 text-sm leading-6 text-ink-2">{group.items.join(", ")}</p>
           </div>
         ))}
       </div>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Experience bullet examples</h2>
-      <p className="mt-4 leading-7 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Experience bullet examples</h2>
+      <p className="mt-4 leading-7 text-ink-2">
         The pattern to copy: strong verb, specific action, measurable result. Compare each weak version with its
         rebuild:
       </p>
       <div className="mt-5 space-y-5">
         {example.bulletExamples.map((bullet, index) => (
-          <article key={bullet.bad} className="rounded-2xl border border-stone-200 bg-white p-6">
-            <p className="text-sm font-black uppercase text-stone-500">Example {index + 1}</p>
-            <p className="mt-3 rounded-xl border border-ember bg-[#fff3ef] p-4 text-sm leading-6">
-              <strong className="font-black text-ember">Bad:</strong> {bullet.bad}
+          <article key={bullet.bad} className="rounded-2xl border border-line bg-white p-6">
+            <p className="eyebrow text-ink-3">Example {index + 1}</p>
+            <p className="mt-3 rounded-xl border border-ember bg-ember-soft p-4 text-sm leading-6">
+              <strong className="font-semibold text-ember">Bad:</strong> {bullet.bad}
             </p>
-            <p className="mt-3 rounded-xl border border-moss bg-[#edf8f2] p-4 text-sm leading-6">
-              <strong className="font-black text-moss">Good:</strong> {bullet.good}
+            <p className="mt-3 rounded-xl border border-moss bg-moss-soft p-4 text-sm leading-6">
+              <strong className="font-semibold text-moss">Good:</strong> {bullet.good}
             </p>
-            <p className="mt-3 text-sm leading-6 text-stone-700">
-              <strong className="font-black">Why:</strong> {bullet.why}
+            <p className="mt-3 text-sm leading-6 text-ink-2">
+              <strong className="font-semibold">Why:</strong> {bullet.why}
             </p>
           </article>
         ))}
       </div>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Common {example.role.toLowerCase()} resume mistakes</h2>
-      <ul className="mt-5 space-y-2 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Common {example.role.toLowerCase()} resume mistakes</h2>
+      <ul className="mt-5 space-y-2 text-ink-2">
         {example.commonMistakes.map((mistake) => (
-          <li key={mistake} className="flex gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6">
+          <li key={mistake} className="flex gap-3 rounded-2xl border border-line bg-white p-4 text-sm leading-6">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ember" aria-hidden />
             {mistake}
           </li>
         ))}
       </ul>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">ATS keywords for {example.role.toLowerCase()} roles</h2>
-      <p className="mt-4 leading-7 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">ATS keywords for {example.role.toLowerCase()} roles</h2>
+      <p className="mt-4 leading-7 text-ink-2">
         Include the terms the job posting uses, and make sure each one is backed by evidence in a bullet. Common
         keywords for this role:
       </p>
       <p className="mt-4 flex flex-wrap gap-2">
         {example.atsKeywords.map((keyword) => (
-          <span key={keyword} className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-semibold">
+          <span key={keyword} className="rounded-full border border-line bg-white px-3 py-1 text-sm font-semibold">
             {keyword}
           </span>
         ))}
       </p>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Formatting tips</h2>
-      <ul className="mt-5 space-y-2 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Formatting tips</h2>
+      <ul className="mt-5 space-y-2 text-ink-2">
         {example.formattingTips.map((tip) => (
-          <li key={tip} className="flex gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6">
+          <li key={tip} className="flex gap-3 rounded-2xl border border-line bg-white p-4 text-sm leading-6">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-moss" aria-hidden />
             {tip}
           </li>
@@ -152,25 +152,25 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
       </div>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Frequently asked questions</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Frequently asked questions</h2>
         <div className="mt-5 space-y-4">
           {example.faq.map((item) => (
-            <details key={item.question} className="rounded-2xl border border-stone-200 bg-white p-5">
-              <summary className="cursor-pointer font-black">{item.question}</summary>
-              <p className="mt-3 leading-7 text-stone-700">{item.answer}</p>
+            <details key={item.question} className="rounded-2xl border border-line bg-white p-5">
+              <summary className="cursor-pointer font-semibold">{item.question}</summary>
+              <p className="mt-3 leading-7 text-ink-2">{item.answer}</p>
             </details>
           ))}
         </div>
       </section>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Related resume examples</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Related resume examples</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {relatedExamples.map((related) => (
             <Link
               key={related.slug}
               href={`/resume-examples/${related.slug}`}
-              className="rounded-2xl border border-stone-200 bg-white p-4 text-sm font-semibold transition hover:border-ink"
+              className="rounded-2xl border border-line bg-white p-4 text-sm font-semibold transition hover:border-ink"
             >
               {related.role} resume example →
             </Link>
@@ -179,13 +179,13 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
       </section>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Related guides</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Related guides</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {relatedGuides.map((guide) => (
             <Link
               key={guide.slug}
               href={`/guides/${guide.slug}`}
-              className="rounded-2xl border border-stone-200 bg-white p-4 text-sm font-semibold transition hover:border-ink"
+              className="rounded-2xl border border-line bg-white p-4 text-sm font-semibold transition hover:border-ink"
             >
               {guide.title} →
             </Link>
@@ -194,7 +194,7 @@ export default async function ResumeExamplePage({ params }: { params: Promise<{ 
       </section>
 
       <div className="mt-12">
-        <RehearseCta />
+        <CvCta />
       </div>
     </ContentShell>
   );

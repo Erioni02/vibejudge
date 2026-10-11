@@ -2,34 +2,11 @@ import { NextResponse } from "next/server";
 import { analyzeResumeWithOllama } from "@/lib/ai/ollama";
 import { extractResumeText } from "@/lib/resume/parser";
 import { validateResumeFile, validateResumeText } from "@/lib/validation/resume";
+import { clientIp, createRateLimiter } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 
-const hits = new Map<string, { count: number; resetAt: number }>();
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_REQUESTS = 8;
-
-function clientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
-}
-
-function rateLimit(ip: string) {
-  const now = Date.now();
-  const current = hits.get(ip);
-
-  if (!current || current.resetAt < now) {
-    hits.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-
-  if (current.count >= MAX_REQUESTS) {
-    return false;
-  }
-
-  current.count += 1;
-  return true;
-}
+const rateLimit = createRateLimiter({ max: 8, windowMs: 60 * 60 * 1000 });
 
 function error(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });

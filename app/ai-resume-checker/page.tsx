@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ContentShell, RehearseCta, SeoFooter, SeoHeader, ToolCta } from "@/components/seo";
+import { ContentShell, CvCta, ToolCta } from "@/components/seo";
 import { JsonLd } from "@/components/json-ld";
 import { faqJsonLd, pageMetadata } from "@/lib/seo";
 
@@ -32,27 +32,27 @@ export default function AiResumeCheckerPage() {
   return (
     <ContentShell>
       <JsonLd data={faqJsonLd(faq)} />
-      <nav aria-label="Breadcrumb" className="text-sm font-semibold text-stone-500">
+      <nav aria-label="Breadcrumb" className="text-[13px] font-medium text-ink-3">
         <Link href="/" className="hover:text-ink">
           Home
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-stone-700">AI Resume Checker</span>
+        <span className="text-ink-2">AI Resume Checker</span>
       </nav>
 
-      <h1 className="mt-6 text-4xl font-black uppercase leading-tight sm:text-5xl">AI Resume Checker</h1>
-      <p className="mt-5 text-xl leading-8 text-stone-700">
+      <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">AI Resume Checker</h1>
+      <p className="mt-5 text-xl leading-8 text-ink-2">
         An AI resume checker reads your resume the way a skeptical recruiter would: fast, critical, and unimpressed by
         buzzwords. VibeJudge scores your resume, roasts its weakest points, and hands you a fix list you can act on
         today.
       </p>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">What VibeJudge checks</h2>
-      <p className="mt-4 leading-7 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">What VibeJudge checks</h2>
+      <p className="mt-4 leading-7 text-ink-2">
         The analysis covers the dimensions that actually decide whether a resume survives a recruiter&apos;s first
         sixty-second scan:
       </p>
-      <ul className="mt-4 space-y-3 text-stone-700">
+      <ul className="mt-4 space-y-3 text-ink-2">
         {[
           ["Impact evidence", "Whether your bullets describe achievements with results or just list responsibilities"],
           ["Measurable outcomes", "Whether metrics (percentages, time saved, scale) back up your strongest claims"],
@@ -61,54 +61,54 @@ export default function AiResumeCheckerPage() {
           ["Section quality", "Specific feedback on your summary, experience, skills, and education sections"],
           ["Interview readiness", "Whether your resume sets up stories you can actually defend in an interview"]
         ].map(([title, body]) => (
-          <li key={title} className="flex gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+          <li key={title} className="flex gap-3 rounded-2xl border border-line bg-white p-4">
             <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ember" aria-hidden />
             <span>
-              <strong className="font-black">{title}.</strong> {body}
+              <strong className="font-semibold">{title}.</strong> {body}
             </span>
           </li>
         ))}
       </ul>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">How the check works</h2>
-      <ol className="mt-4 space-y-4 text-stone-700">
-        <li className="rounded-2xl border border-stone-200 bg-white p-4">
-          <strong className="font-black">1. Upload or paste your resume.</strong> PDF, DOCX, or TXT up to 6MB. Your
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">How the check works</h2>
+      <ol className="mt-4 space-y-4 text-ink-2">
+        <li className="rounded-2xl border border-line bg-white p-4">
+          <strong className="font-semibold">1. Upload or paste your resume.</strong> PDF, DOCX, or TXT up to 6MB. Your
           resume is processed for the current request and discarded after analysis.
         </li>
-        <li className="rounded-2xl border border-stone-200 bg-white p-4">
-          <strong className="font-black">2. AI analysis runs server-side.</strong> Your resume text is analyzed against
+        <li className="rounded-2xl border border-line bg-white p-4">
+          <strong className="font-semibold">2. AI analysis runs server-side.</strong> Your resume text is analyzed against
           recruiter criteria: impact, metrics, structure, ATS readiness, and clarity.
         </li>
-        <li className="rounded-2xl border border-stone-200 bg-white p-4">
-          <strong className="font-black">3. You get a structured verdict.</strong> A 0-100 score, a roast that names
+        <li className="rounded-2xl border border-line bg-white p-4">
+          <strong className="font-semibold">3. You get a structured verdict.</strong> A 0-100 score, a roast that names
           specific weaknesses, a prioritized problem list, quick wins, and before/after rewrite examples drawn from your
           actual bullets.
         </li>
       </ol>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Why an AI check first?</h2>
-      <p className="mt-4 leading-7 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Why an AI check first?</h2>
+      <p className="mt-4 leading-7 text-ink-2">
         Human reviewers are valuable but slow, inconsistent, and often unavailable. An AI check gives you an instant,
         structured first pass so that when a human does read your resume, they are reading your best version. Most
         resume rejections are structural: responsibility bullets, missing metrics, keyword mismatches, formatting that
         breaks parsing. Those are exactly the issues an automated check catches reliably.
       </p>
-      <p className="mt-4 leading-7 text-stone-700">
+      <p className="mt-4 leading-7 text-ink-2">
         VibeJudge adds something most checkers do not: honesty. The roast format exists because polite feedback gets
         ignored. A specific, slightly brutal observation about your bullet points is harder to dismiss than a generic
         &quot;consider adding more metrics.&quot;
       </p>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Who it is for</h2>
-      <ul className="mt-4 grid gap-3 text-stone-700 sm:grid-cols-2">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Who it is for</h2>
+      <ul className="mt-4 grid gap-3 text-ink-2 sm:grid-cols-2">
         {[
           "Job seekers applying right now who want a fast sanity check before clicking submit",
           "Career changers who need an outside read on how their old experience lands in a new field",
           "Students and graduates turning projects into professional evidence",
           "Anyone who has been sending resumes into silence and wants to know why"
         ].map((item) => (
-          <li key={item} className="rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6">
+          <li key={item} className="rounded-2xl border border-line bg-white p-4 text-sm leading-6">
             {item}
           </li>
         ))}
@@ -122,47 +122,47 @@ export default function AiResumeCheckerPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Frequently asked questions</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Frequently asked questions</h2>
         <div className="mt-5 space-y-4">
           {faq.map((item) => (
-            <details key={item.question} className="rounded-2xl border border-stone-200 bg-white p-5">
-              <summary className="cursor-pointer font-black">{item.question}</summary>
-              <p className="mt-3 leading-7 text-stone-700">{item.answer}</p>
+            <details key={item.question} className="rounded-2xl border border-line bg-white p-5">
+              <summary className="cursor-pointer font-semibold">{item.question}</summary>
+              <p className="mt-3 leading-7 text-ink-2">{item.answer}</p>
             </details>
           ))}
         </div>
       </section>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Related resources</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Related resources</h2>
         <ul className="mt-4 grid gap-3 text-sm font-semibold sm:grid-cols-2">
           <li>
-            <Link href="/ats-resume-checker" className="text-stone-700 hover:text-ink">
+            <Link href="/ats-resume-checker" className="text-ink-2 hover:text-ink">
               ATS resume checker — see what the robots see →
             </Link>
           </li>
           <li>
-            <Link href="/free-resume-checker" className="text-stone-700 hover:text-ink">
+            <Link href="/free-resume-checker" className="text-ink-2 hover:text-ink">
               Free resume checker — what free includes →
             </Link>
           </li>
           <li>
-            <Link href="/resume-review" className="text-stone-700 hover:text-ink">
+            <Link href="/resume-review" className="text-ink-2 hover:text-ink">
               What a complete resume review covers →
             </Link>
           </li>
           <li>
-            <Link href="/resume-examples" className="text-stone-700 hover:text-ink">
+            <Link href="/resume-examples" className="text-ink-2 hover:text-ink">
               Resume examples by role →
             </Link>
           </li>
           <li>
-            <Link href="/guides/how-to-write-a-resume" className="text-stone-700 hover:text-ink">
+            <Link href="/guides/how-to-write-a-resume" className="text-ink-2 hover:text-ink">
               How to write a resume, step by step →
             </Link>
           </li>
           <li>
-            <Link href="/guides/resume-mistakes" className="text-stone-700 hover:text-ink">
+            <Link href="/guides/resume-mistakes" className="text-ink-2 hover:text-ink">
               The 12 most common resume mistakes →
             </Link>
           </li>
@@ -170,7 +170,7 @@ export default function AiResumeCheckerPage() {
       </section>
 
       <div className="mt-12">
-        <RehearseCta />
+        <CvCta />
       </div>
     </ContentShell>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ContentShell, RehearseCta, ToolCta } from "@/components/seo";
+import { ContentShell, CvCta, ToolCta } from "@/components/seo";
 import { JsonLd } from "@/components/json-ld";
 import { faqJsonLd, pageMetadata } from "@/lib/seo";
 
@@ -32,22 +32,22 @@ export default function AtsResumeCheckerPage() {
   return (
     <ContentShell>
       <JsonLd data={faqJsonLd(faq)} />
-      <nav aria-label="Breadcrumb" className="text-sm font-semibold text-stone-500">
+      <nav aria-label="Breadcrumb" className="text-[13px] font-medium text-ink-3">
         <Link href="/" className="hover:text-ink">
           Home
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-stone-700">ATS Resume Checker</span>
+        <span className="text-ink-2">ATS Resume Checker</span>
       </nav>
 
-      <h1 className="mt-6 text-4xl font-black uppercase leading-tight sm:text-5xl">ATS Resume Checker</h1>
-      <p className="mt-5 text-xl leading-8 text-stone-700">
+      <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">ATS Resume Checker</h1>
+      <p className="mt-5 text-xl leading-8 text-ink-2">
         Before a human loves your resume, software has to find it. Applicant tracking systems convert your file to text,
         index it, and let recruiters search it. If parsing garbles your experience or the searched keywords are missing,
         you are invisible no matter how good you are. This page shows you exactly what to check.
       </p>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">What breaks ATS parsing</h2>
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">What breaks ATS parsing</h2>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {[
           ["Two-column layouts", "Text extraction often interleaves columns, scrambling your sections into nonsense."],
@@ -57,15 +57,15 @@ export default function AtsResumeCheckerPage() {
           ["Exotic fonts and symbols", "Special glyphs can convert to garbage characters mid-sentence."],
           ["Non-standard section titles", "'My Journey' is creative; parsers index 'Experience'."]
         ].map(([title, body]) => (
-          <div key={title} className="rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="font-black text-ember">{title}</h3>
-            <p className="mt-2 text-sm leading-6 text-stone-600">{body}</p>
+          <div key={title} className="rounded-2xl border border-line bg-white p-5">
+            <h3 className="font-semibold text-ember">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-ink-2">{body}</p>
           </div>
         ))}
       </div>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">The ATS-safe formatting checklist</h2>
-      <ul className="mt-4 space-y-2 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">The ATS-safe formatting checklist</h2>
+      <ul className="mt-4 space-y-2 text-ink-2">
         {[
           "Single column, top-to-bottom reading flow",
           "Standard section headers: Professional Summary, Experience, Skills, Education",
@@ -76,19 +76,19 @@ export default function AtsResumeCheckerPage() {
           "10-12pt standard font, 0.5 inch margins minimum",
           "File named Firstname-Lastname-Resume.pdf"
         ].map((item) => (
-          <li key={item} className="flex gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6">
+          <li key={item} className="flex gap-3 rounded-2xl border border-line bg-white p-4 text-sm leading-6">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-moss" aria-hidden />
             {item}
           </li>
         ))}
       </ul>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">Keywords: the matching half</h2>
-      <p className="mt-4 leading-7 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">Keywords: the matching half</h2>
+      <p className="mt-4 leading-7 text-ink-2">
         Parsing gets you indexed; keywords get you found. Recruiters search the ATS index for the terms in their job
         description, so your resume needs the posting&apos;s exact vocabulary, honestly earned:
       </p>
-      <ul className="mt-4 space-y-2 text-stone-700">
+      <ul className="mt-4 space-y-2 text-ink-2">
         {[
           "Mirror the posting's skill names: 'Power BI' not 'Microsoft Power BI Desktop' if that is their phrase",
           "Include acronyms and expansions once each: 'SEO (search engine optimization)'",
@@ -96,25 +96,25 @@ export default function AtsResumeCheckerPage() {
           "Use the standard job title in parentheses if your real title is idiosyncratic",
           "Never keyword-stuff or hide text: recruiters see it, and it ends processes"
         ].map((item) => (
-          <li key={item} className="flex gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6">
+          <li key={item} className="flex gap-3 rounded-2xl border border-line bg-white p-4 text-sm leading-6">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ember" aria-hidden />
             {item}
           </li>
         ))}
       </ul>
 
-      <h2 className="mt-12 text-3xl font-black uppercase">The 60-second self-test</h2>
-      <ol className="mt-4 space-y-3 text-stone-700">
+      <h2 className="mt-12 font-display text-[28px] font-semibold leading-tight tracking-tight">The 60-second self-test</h2>
+      <ol className="mt-4 space-y-3 text-ink-2">
         <li>
-          <strong className="font-black">1. Copy your PDF text into a plain text editor.</strong> What survives is
+          <strong className="font-semibold">1. Copy your PDF text into a plain text editor.</strong> What survives is
           approximately what the ATS indexes. Jumbled or missing sections means reformat.
         </li>
         <li>
-          <strong className="font-black">2. Compare against the posting.</strong> Highlight their top 5-7 skills and
+          <strong className="font-semibold">2. Compare against the posting.</strong> Highlight their top 5-7 skills and
           check each appears in your skills line and at least one bullet.
         </li>
         <li>
-          <strong className="font-black">3. Run a structured check.</strong> VibeJudge&apos;s analysis flags parsing
+          <strong className="font-semibold">3. Run a structured check.</strong> VibeJudge&apos;s analysis flags parsing
           risks and content weaknesses in one pass, free.
         </li>
       </ol>
@@ -127,37 +127,37 @@ export default function AtsResumeCheckerPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Frequently asked questions</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Frequently asked questions</h2>
         <div className="mt-5 space-y-4">
           {faq.map((item) => (
-            <details key={item.question} className="rounded-2xl border border-stone-200 bg-white p-5">
-              <summary className="cursor-pointer font-black">{item.question}</summary>
-              <p className="mt-3 leading-7 text-stone-700">{item.answer}</p>
+            <details key={item.question} className="rounded-2xl border border-line bg-white p-5">
+              <summary className="cursor-pointer font-semibold">{item.question}</summary>
+              <p className="mt-3 leading-7 text-ink-2">{item.answer}</p>
             </details>
           ))}
         </div>
       </section>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-black uppercase">Related resources</h2>
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Related resources</h2>
         <ul className="mt-4 grid gap-3 text-sm font-semibold sm:grid-cols-2">
           <li>
-            <Link href="/guides/ats-resume-guide" className="text-stone-700 hover:text-ink">
+            <Link href="/guides/ats-resume-guide" className="text-ink-2 hover:text-ink">
               The complete ATS resume guide →
             </Link>
           </li>
           <li>
-            <Link href="/ai-resume-checker" className="text-stone-700 hover:text-ink">
+            <Link href="/ai-resume-checker" className="text-ink-2 hover:text-ink">
               The full AI resume check →
             </Link>
           </li>
           <li>
-            <Link href="/guides/resume-skills" className="text-stone-700 hover:text-ink">
+            <Link href="/guides/resume-skills" className="text-ink-2 hover:text-ink">
               Which skills to list (and how) →
             </Link>
           </li>
           <li>
-            <Link href="/resume-examples" className="text-stone-700 hover:text-ink">
+            <Link href="/resume-examples" className="text-ink-2 hover:text-ink">
               ATS-friendly resume examples by role →
             </Link>
           </li>
@@ -165,7 +165,7 @@ export default function AtsResumeCheckerPage() {
       </section>
 
       <div className="mt-12">
-        <RehearseCta />
+        <CvCta />
       </div>
     </ContentShell>
   );

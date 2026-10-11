@@ -21,14 +21,12 @@ export function pageMetadata({ title, description, path }: PageMetaInput): Metad
       description,
       url,
       siteName,
-      images: [{ url: "/cv.png", width: 512, height: 512, alt: `${siteName} logo` }],
       type: "website"
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
-      description,
-      images: ["/cv.png"]
+      description
     }
   };
 }
@@ -101,7 +99,7 @@ export function webAppJsonLd() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Any",
     description:
-      "Free AI resume checker. Upload a resume and get a score, a roast, ATS analysis, and concrete fixes. No signup required.",
+      "Free AI CV roast and CV generator. Upload a CV to get a score, a brutally honest roast, and concrete fixes, download the roast, or generate a new CV. No account required.",
     offers: {
       "@type": "Offer",
       price: "0",
