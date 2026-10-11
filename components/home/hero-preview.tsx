@@ -1,12 +1,12 @@
-import { ArrowRight, Download, Sparkles } from "lucide-react";
+import { Download, Sparkles } from "lucide-react";
 import { ScoreDial } from "@/components/roast/score-dial";
 
 /** Decorative product preview for the hero. Clearly labeled as an example; it contains no real user data. */
 export function HeroPreview() {
   return (
-    <div className="relative mx-auto h-[540px] w-full max-w-[500px] select-none" aria-hidden>
+    <div className="relative mx-auto h-[470px] w-full max-w-[500px] select-none" aria-hidden>
       {/* Back: the generated CV */}
-      <div className="absolute right-0 top-0 w-[290px] rotate-[3deg] rounded-[6px] bg-white p-6 shadow-lift ring-1 ring-line">
+      <div className="absolute right-0 top-0 w-[290px] rotate-[3deg] rounded-[6px] bg-white p-6 shadow-card ring-1 ring-line">
         <div className="flex items-center justify-between">
           <span className="chip !border-moss/25 !bg-moss-soft !text-moss">
             <Sparkles size={11} />
@@ -33,7 +33,7 @@ export function HeroPreview() {
       </div>
 
       {/* Front: the roast */}
-      <div className="absolute left-0 top-[178px] w-[320px] -rotate-[2deg] rounded-card border border-line bg-white p-5 shadow-lift">
+      <div className="absolute left-0 top-[178px] w-[320px] -rotate-[2deg] rounded-card border border-line bg-white p-5 shadow-card">
         <div className="flex items-start justify-between">
           <div>
             <p className="eyebrow">Example roast</p>
@@ -50,15 +50,6 @@ export function HeroPreview() {
             Lead each bullet with the result, then the number.
           </p>
         </div>
-      </div>
-
-      {/* Floating: before → after */}
-      <div className="absolute bottom-0 right-0 w-[290px] rotate-[1.5deg] rounded-card border border-line bg-white p-4 shadow-card">
-        <p className="text-[11.5px] leading-5 text-ink-3 line-through decoration-ember/50">Responsible for managing social media.</p>
-        <div className="my-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-moss">
-          <ArrowRight size={11} /> Rewritten
-        </div>
-        <p className="text-[12px] font-medium leading-5 text-ink">Grew Instagram from 4k to 31k followers in 9 months, driving 18% of web sign-ups.</p>
       </div>
     </div>
   );

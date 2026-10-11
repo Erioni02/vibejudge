@@ -1,18 +1,21 @@
 "use client";
 
-import { Check, Download, FileText, Gavel, Loader2, RotateCcw, Sparkles, ThumbsUp } from "lucide-react";
+import { Check, Download, FileText, Link2, Loader2, RotateCcw, Sparkles, Swords } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
-import { bySeverity, severityMeta } from "@/lib/score";
+import { trackEvent } from "@/lib/analytics";
+import { bySeverity, scoreBand, severityMeta } from "@/lib/score";
 import { ScoreDial } from "@/components/roast/score-dial";
 import { BeforeAfter, CategoryFeedback, RoastLines, SectionTitle } from "@/components/roast/roast-parts";
-import { SharePanel, downloadRoastCard } from "@/components/roast/share-panel";
+import { SharePanel, copyChallengeLink, downloadRoastCard } from "@/components/roast/share-panel";
+import { TierLadder } from "@/components/roast/tier-ladder";
 
 type CvStatus = "idle" | "loading" | "done" | "error";
 
 export function RoastReport({
   analysis,
   sourceLabel,
+  challengeScore,
   cvStatus,
   onGenerateCv,
   onViewCv,
@@ -21,6 +24,7 @@ export function RoastReport({
 }: {
   analysis: ResumeAnalysis;
   sourceLabel: string;
+  challengeScore: number | null;
   cvStatus: CvStatus;
   onGenerateCv: () => void;
   onViewCv: () => void;
@@ -33,6 +37,11 @@ export function RoastReport({
   const [barVisible, setBarVisible] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const problems = bySeverity(analysis.problems);
+  const tier = scoreBand(analysis.score);
+
+  useEffect(() => {
+    if (challengeScore !== null) trackEvent("challenge_completed");
+  }, [challengeScore]);
 
   // Mobile: show the sticky action bar only while the report is on screen.
   useEffect(() => {
@@ -63,16 +72,11 @@ export function RoastReport({
       <div ref={rootRef} className="animate-fade-up pb-16 lg:pb-0">
         {/* Report header */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink text-white">
-              <Gavel size={15} aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <p className="eyebrow">The verdict is in</p>
-              <p className="truncate text-sm font-medium text-ink-2" title={sourceLabel}>
-                {sourceLabel}
-              </p>
-            </div>
+          <div className="min-w-0">
+            <p className="eyebrow">The verdict is in</p>
+            <p className="mt-0.5 truncate text-sm text-ink-2" title={sourceLabel}>
+              {sourceLabel}
+            </p>
           </div>
           <button type="button" onClick={onReset} className="btn btn-ghost btn-sm">
             <RotateCcw size={14} aria-hidden />
@@ -83,13 +87,14 @@ export function RoastReport({
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
           {/* Score + primary actions */}
           <aside className="space-y-4 lg:sticky lg:top-24">
-            <div className="card p-6 text-center shadow-card">
+            <div className="card p-6 text-center">
               <ScoreDial score={analysis.score} />
+              <p className="mt-2 text-xs text-ink-3">{tier.tagline}</p>
               <h2 className="mt-5 font-display text-[22px] font-semibold leading-tight tracking-tight text-ink">{analysis.verdict}</h2>
               <p className="mt-3 text-[15px] leading-7 text-ink-2">{analysis.summary}</p>
             </div>
 
-            <div className="card hidden space-y-2.5 p-4 shadow-card lg:block">
+            <div className="card hidden space-y-2.5 p-4 lg:block">
               {cvStatus === "done" ? (
                 <button type="button" onClick={onViewCv} className="btn btn-primary btn-lg w-full">
                   <FileText size={17} aria-hidden />
@@ -107,7 +112,11 @@ export function RoastReport({
                   {cvStatus === "loading" ? "Writing your new CV…" : "Generate a New CV with AI"}
                 </button>
               )}
-              <button type="button" onClick={download} disabled={downloading} aria-busy={downloading} className="btn btn-secondary w-full">
+              <button type="button" onClick={() => copyChallengeLink(analysis.score, notify)} className="btn btn-secondary w-full">
+                <Swords size={16} aria-hidden />
+                Challenge a friend
+              </button>
+              <button type="button" onClick={download} disabled={downloading} aria-busy={downloading} className="btn btn-ghost w-full">
                 <Download size={16} aria-hidden />
                 {downloading ? "Rendering…" : "Download roast"}
               </button>
@@ -119,30 +128,52 @@ export function RoastReport({
 
           {/* Report body */}
           <div className="min-w-0 space-y-6">
+            {challengeScore !== null ? (
+              <RoastOffResult yours={analysis.score} theirs={challengeScore} notify={notify} />
+            ) : null}
+
             {/* The roast — centerpiece */}
-            <section className="card relative overflow-hidden p-6 shadow-card sm:p-8" aria-labelledby="roast-heading">
+            <section className="card relative overflow-hidden p-6 sm:p-8" aria-labelledby="roast-heading">
               <div className="absolute inset-x-0 top-0 h-1 bg-ember" aria-hidden />
               <div className="mb-6 flex items-center justify-between gap-3">
                 <h2 id="roast-heading" className="font-display text-display-md font-semibold">
                   The roast
                 </h2>
-                <span className="chip">
-                  <span className="emoji" aria-hidden>
-                    🔥
-                  </span>
-                  {analysis.roast.length} burns
-                </span>
               </div>
               <RoastLines lines={analysis.roast} />
+            </section>
+
+            <section className="card grid gap-6 p-6 sm:p-7 md:grid-cols-2 md:items-center" aria-label="Your tier">
+              <div>
+                <p className="eyebrow">Your tier</p>
+                <p className="mt-2 flex items-center gap-2 font-display text-[26px] font-semibold tracking-tight">
+                  <span className="emoji text-2xl" aria-hidden>
+                    {tier.emoji}
+                  </span>
+                  {tier.label}
+                </p>
+                <p className="mt-1.5 text-[15px] leading-7 text-ink-2">{tier.tagline}</p>
+                <div className="mt-5 rounded-control bg-paper p-4">
+                  <p className="text-sm font-medium text-ink">Start a roast-off</p>
+                  <p className="mt-1 text-sm leading-6 text-ink-3">
+                    Send friends a link with your score. They roast their CV, then see who won. Only your score is shared.
+                  </p>
+                  <button type="button" onClick={() => copyChallengeLink(analysis.score, notify)} className="btn btn-dark btn-sm mt-3">
+                    <Link2 size={14} aria-hidden />
+                    Copy roast-off link
+                  </button>
+                </div>
+              </div>
+              <TierLadder score={analysis.score} />
             </section>
 
             {analysis.strengths.length ? (
               <section className="card p-6 sm:p-7" aria-label="What's working">
                 <SectionTitle eyebrow="Credit where it's due" title="What's actually working" />
-                <ul className="grid gap-2.5 sm:grid-cols-2">
+                <ul className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
                   {analysis.strengths.map((strength, index) => (
-                    <li key={index} className="flex gap-3 rounded-control bg-moss-soft/60 p-3.5 text-sm leading-6 text-ink">
-                      <ThumbsUp size={16} className="mt-1 shrink-0 text-moss" aria-hidden />
+                    <li key={index} className="flex gap-2.5 text-[15px] leading-6 text-ink">
+                      <Check size={16} className="mt-1 shrink-0 text-moss" strokeWidth={2.5} aria-hidden />
                       {strength}
                     </li>
                   ))}
@@ -308,5 +339,59 @@ export function RoastReport({
         </div>
       </div>
     </>
+  );
+}
+
+/** Head-to-head result for visitors who arrived via a roast-off link. */
+function RoastOffResult({ yours, theirs, notify }: { yours: number; theirs: number; notify: (message: string) => void }) {
+  const mine = Math.round(yours);
+  const diff = mine - theirs;
+  const points = (n: number) => `${n} point${n === 1 ? "" : "s"}`;
+  const headline =
+    diff > 0 ? `You won the roast-off by ${points(diff)}.` : diff < 0 ? `Your friend wins by ${points(-diff)}.` : "Dead heat. Equally roasted.";
+  const sub =
+    diff > 0
+      ? "Rub it in: send them your score."
+      : diff < 0
+        ? "Revenge plan: generate a new CV, roast it again, send a rematch."
+        : "Settle it: fix one bullet and run it back.";
+
+  return (
+    <section className="card overflow-hidden" aria-label="Roast-off result">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-line px-6 py-6 text-center">
+        <Contender label="You" score={mine} leading={diff >= 0} />
+        <span className="font-serif text-2xl italic text-ink-3">vs</span>
+        <Contender label="Your friend" score={theirs} leading={diff <= 0} />
+      </div>
+      <div className="flex flex-col gap-4 bg-paper/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-display text-lg font-semibold tracking-tight">
+            {diff > 0 ? <span className="emoji">🏆 </span> : null}
+            {headline}
+          </p>
+          <p className="mt-0.5 text-sm text-ink-3">{sub}</p>
+        </div>
+        <button type="button" onClick={() => copyChallengeLink(yours, notify)} className="btn btn-dark btn-sm shrink-0">
+          <Swords size={14} aria-hidden />
+          {diff >= 0 ? "Send your score back" : "Copy a rematch link"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function Contender({ label, score, leading }: { label: string; score: number; leading: boolean }) {
+  const tier = scoreBand(score);
+  return (
+    <div>
+      <p className="eyebrow">{label}</p>
+      <p className={`mt-1 font-display text-5xl font-semibold tabular-nums ${leading ? "text-ink" : "text-ink-3"}`}>{score}</p>
+      <p className="mt-1 text-xs text-ink-3">
+        <span className="emoji" aria-hidden>
+          {tier.emoji}
+        </span>{" "}
+        {tier.label}
+      </p>
+    </div>
   );
 }

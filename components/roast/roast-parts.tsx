@@ -1,5 +1,6 @@
 import { ArrowRight, Briefcase, GraduationCap, LayoutTemplate, ScanText, Wrench } from "lucide-react";
 import type { ResumeAnalysis, RewriteExample } from "@/lib/types";
+import { stripMarkdown } from "@/lib/text";
 
 /** Presentational building blocks shared by the live results and the homepage demo. */
 
@@ -16,7 +17,7 @@ export function RoastLines({ lines, size = "lg" }: { lines: string[]; size?: "lg
               size === "lg" ? "text-[22px] sm:text-[26px]" : "text-[19px] sm:text-[21px]"
             }`}
           >
-            {line}
+            {stripMarkdown(line)}
           </p>
         </li>
       ))}

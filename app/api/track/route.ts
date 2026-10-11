@@ -15,7 +15,10 @@ const allowedEvents = new Set([
   "roast_card_downloaded",
   "cv_generation_started",
   "cv_generation_failed",
-  "cv_downloaded"
+  "cv_downloaded",
+  "challenge_opened",
+  "challenge_completed",
+  "challenge_link_shared"
 ]);
 
 const counts = new Map<string, number>();

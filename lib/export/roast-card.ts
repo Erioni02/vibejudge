@@ -1,5 +1,6 @@
 import type { ResumeAnalysis } from "@/lib/types";
 import { scoreBand } from "@/lib/score";
+import { stripMarkdown } from "@/lib/text";
 import { brandFonts, canvasToBlob, drawLines, roundRect, wrapLines } from "@/lib/export/canvas";
 
 export type RoastCardOptions = {
@@ -74,6 +75,13 @@ export async function renderRoastCard(analysis: ResumeAnalysis, options: RoastCa
   ctx.fillStyle = "#ffffff";
   ctx.fillText(pillText, W - PAD - 48 - pillW + 20, panelY + 84);
 
+  // Tier tagline
+  ctx.fillStyle = "#a59b8c";
+  ctx.font = `500 22px ${fonts.sans}`;
+  ctx.textAlign = "right";
+  ctx.fillText(band.tagline, W - PAD - 48, panelY + 214);
+  ctx.textAlign = "left";
+
   // Progress bar
   const barX = PAD + 48;
   const barW = innerW - 96;
@@ -100,7 +108,7 @@ export async function renderRoastCard(analysis: ResumeAnalysis, options: RoastCa
 
     for (const [index, line] of analysis.roast.slice(0, 3).entries()) {
       ctx.font = `italic 400 42px ${fonts.serif}`;
-      const lines = wrapLines(ctx, `“${line}”`, innerW - 64, 3);
+      const lines = wrapLines(ctx, `“${stripMarkdown(line)}”`, innerW - 64, 3);
       const blockH = lines.length * 52;
       if (y + blockH > footerTop - 20) break;
 
@@ -126,10 +134,10 @@ export async function renderRoastCard(analysis: ResumeAnalysis, options: RoastCa
   ctx.stroke();
   ctx.fillStyle = "#16130f";
   ctx.font = `600 28px ${fonts.display}`;
-  ctx.fillText("Think your CV can survive?", PAD, footerTop + 76);
+  ctx.fillText(`Think your CV can beat ${Math.round(analysis.score)}?`, PAD, footerTop + 76);
   ctx.fillStyle = "#6f675c";
   ctx.font = `500 24px ${fonts.sans}`;
-  ctx.fillText("Get roasted free at vibejudge.app", PAD, footerTop + 112);
+  ctx.fillText(`Take the roast-off → vibejudge.app/?vs=${Math.round(analysis.score)}`, PAD, footerTop + 112);
 
   return canvasToBlob(canvas);
 }

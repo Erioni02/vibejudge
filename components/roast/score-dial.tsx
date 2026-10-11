@@ -67,7 +67,9 @@ export function ScoreBandPill({ score, className = "" }: { score: number; classN
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${styles} ${className}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+      <span className="emoji text-[0.95em] leading-none" aria-hidden>
+        {band.emoji}
+      </span>
       {band.label}
     </span>
   );

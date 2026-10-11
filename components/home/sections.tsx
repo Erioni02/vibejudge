@@ -1,5 +1,6 @@
 import { ArrowRight, ArrowUpRight, Download, Flame, Plus, UploadCloud } from "lucide-react";
 import Link from "next/link";
+import { scoreTiers } from "@/lib/score";
 
 const steps = [
   {
@@ -168,10 +169,6 @@ export function FinalCta() {
   return (
     <section className="section pb-20 sm:pb-28" aria-labelledby="final-cta-heading">
       <div className="relative overflow-hidden rounded-[24px] bg-ink px-6 py-14 text-center text-white sm:px-12 sm:py-20">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(#3d3730_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_60%_70%_at_50%_100%,#000_10%,transparent_70%)]"
-          aria-hidden
-        />
         <div className="relative">
           <h2 id="final-cta-heading" className="font-display text-display-lg font-semibold">
             Think your CV can survive?
@@ -184,6 +181,38 @@ export function FinalCta() {
             <ArrowRight size={17} className="transition group-hover:translate-x-0.5" aria-hidden />
           </Link>
         </div>
+      </div>
+    </section>
+  );
+}
+
+export function TierShowcase() {
+  return (
+    <section className="border-t border-line py-20 sm:py-24" aria-labelledby="tiers-heading">
+      <div className="section">
+        <div className="max-w-xl">
+          <p className="eyebrow text-ember">Score tiers</p>
+          <h2 id="tiers-heading" className="mt-3 font-display text-display-lg font-semibold">
+            Which tier is your CV?
+          </h2>
+          <p className="mt-4 text-[15px] leading-7 text-ink-2">
+            Every roast lands in a tier. Flex the good ones, laugh at the bad ones, then challenge a friend to beat you.
+          </p>
+        </div>
+        <ol className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
+          {scoreTiers.map((tier, index) => (
+            <li key={tier.label} className="bg-white p-5">
+              <span className="emoji text-2xl leading-none" aria-hidden>
+                {tier.emoji}
+              </span>
+              <p className="mt-4 font-display text-base font-semibold tracking-tight">{tier.label}</p>
+              <p className="mt-0.5 text-xs tabular-nums text-ink-3">
+                {tier.min}–{index === 0 ? 100 : scoreTiers[index - 1].min - 1}
+              </p>
+              <p className="mt-3 text-[13px] leading-5 text-ink-2">{tier.tagline}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

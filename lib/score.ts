@@ -2,12 +2,30 @@ import type { ProblemSeverity } from "@/lib/types";
 
 export type ScoreTone = "moss" | "amber" | "ember";
 
-/** Shared score bands so the UI, the share card, and the demo always agree. */
-export function scoreBand(score: number): { label: string; tone: ScoreTone; hex: string } {
-  if (score >= 80) return { label: "Hard to roast", tone: "moss", hex: "#2f6b57" };
-  if (score >= 60) return { label: "Fixable", tone: "amber", hex: "#a8701c" };
-  if (score >= 40) return { label: "Needs real work", tone: "ember", hex: "#e2492f" };
-  return { label: "Full rebuild", tone: "ember", hex: "#e2492f" };
+export type ScoreTier = {
+  min: number;
+  label: string;
+  emoji: string;
+  tagline: string;
+  tone: ScoreTone;
+  hex: string;
+};
+
+/**
+ * Shareable score tiers. High tiers are badges worth showing off; low tiers are funny enough to post anyway.
+ * Shared by the UI, the demo, the share card, and the roast-off comparison so they always agree.
+ */
+export const scoreTiers: ScoreTier[] = [
+  { min: 90, label: "Unroastable", emoji: "💎", tagline: "The judge found nothing to burn.", tone: "moss", hex: "#2f6b57" },
+  { min: 80, label: "Hard to roast", emoji: "🛡️", tagline: "Recruiters will actually read this one.", tone: "moss", hex: "#2f6b57" },
+  { min: 70, label: "Lightly toasted", emoji: "🍞", tagline: "Solid, with a few crispy edges.", tone: "amber", hex: "#a8701c" },
+  { min: 60, label: "Medium rare", emoji: "🥩", tagline: "Promising, but still a bit raw.", tone: "amber", hex: "#a8701c" },
+  { min: 40, label: "Well done", emoji: "🔥", tagline: "Not a compliment. Thoroughly roasted.", tone: "ember", hex: "#e2492f" },
+  { min: 0, label: "Burnt to a crisp", emoji: "💀", tagline: "Call the fire brigade. Then rewrite it.", tone: "ember", hex: "#e2492f" }
+];
+
+export function scoreBand(score: number): ScoreTier {
+  return scoreTiers.find((tier) => score >= tier.min) ?? scoreTiers[scoreTiers.length - 1];
 }
 
 export const severityMeta: Record<ProblemSeverity, { label: string; className: string; dot: string }> = {

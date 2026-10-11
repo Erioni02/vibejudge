@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
 import { trackEvent } from "@/lib/analytics";
+import { parseChallengeScore } from "@/lib/challenge";
+import { scoreBand } from "@/lib/score";
 import { validateResumeFile } from "@/lib/validation/resume";
 import { HeroPreview } from "@/components/home/hero-preview";
 import { UploadPanel, type InputMode, type RoastStatus } from "@/components/home/upload-panel";
@@ -60,6 +62,7 @@ export function RoastStudio() {
   const [cvError, setCvError] = useState("");
   const [cvUsedRoast, setCvUsedRoast] = useState(false);
 
+  const [challengeScore, setChallengeScore] = useState<number | null>(null);
   const [toast, setToast] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
   const roastAbort = useRef<AbortController | null>(null);
@@ -75,6 +78,15 @@ export function RoastStudio() {
     const timer = window.setTimeout(() => setToastVisible(false), 3200);
     return () => window.clearTimeout(timer);
   }, [toast, toastVisible]);
+
+  // Roast-off links (/?vs=54) carry only a score.
+  useEffect(() => {
+    const score = parseChallengeScore(window.location.search);
+    if (score !== null) {
+      setChallengeScore(score);
+      trackEvent("challenge_opened");
+    }
+  }, []);
 
   useEffect(
     () => () => {
@@ -213,16 +225,22 @@ export function RoastStudio() {
 
       {/* Hero */}
       <section id="top" className="relative scroll-mt-24 overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(#d9d1c3_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_70%_60%_at_70%_20%,#000_20%,transparent_75%)]"
-          aria-hidden
-        />
         <div className="section grid items-start gap-12 pb-16 pt-8 sm:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-16 lg:pb-24 lg:pt-14">
           <div className="mx-auto w-full max-w-xl lg:mx-0">
-            <p className="chip animate-fade-up">
-              <span className="h-1.5 w-1.5 rounded-full bg-ember" aria-hidden />
-              Free AI CV roast · No sign-up
-            </p>
+            {challengeScore !== null ? (
+              <p className="flex animate-fade-up items-center gap-3 rounded-card border border-line bg-white px-4 py-3 text-sm leading-6 text-ink-2">
+                <span className="emoji text-xl leading-none" aria-hidden>
+                  🥊
+                </span>
+                <span>
+                  <span className="font-semibold text-ink">Roast-off:</span> a friend scored{" "}
+                  <span className="font-semibold text-ink">{challengeScore}/100</span> ({scoreBand(challengeScore).label}). Can your
+                  CV beat it?
+                </span>
+              </p>
+            ) : (
+              <p className="eyebrow animate-fade-up text-ember">Free AI CV roast · No sign-up</p>
+            )}
             <h1 className="mt-5 animate-fade-up text-balance font-display text-display-xl font-semibold text-ink [animation-delay:60ms]">
               Your CV is lying to you.{" "}
               <span className="block font-serif font-normal italic tracking-[-0.02em] text-ember">Let&apos;s fix that.</span>
@@ -277,12 +295,13 @@ export function RoastStudio() {
 
       {/* Results */}
       {showResults ? (
-        <section id="results" className="scroll-mt-20 border-y border-line bg-[#fbf9f5] py-12 sm:py-16" aria-label="Your results">
+        <section id="results" className="scroll-mt-20 border-y border-line bg-white py-12 sm:py-16" aria-label="Your results">
           <div className="section">
             {analysis ? (
               <RoastReport
                 analysis={analysis}
                 sourceLabel={sourceLabel}
+                challengeScore={challengeScore}
                 cvStatus={cvStatus}
                 onGenerateCv={generateCv}
                 onViewCv={() => scrollToId("new-cv")}

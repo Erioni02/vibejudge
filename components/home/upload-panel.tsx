@@ -102,7 +102,7 @@ export function UploadPanel({
   const activeStep = roastSteps.reduce((active, step, index) => (elapsed >= step.at ? index : active), 0);
 
   return (
-    <div id="upload" className="card scroll-mt-24 p-2 shadow-lift">
+    <div id="upload" className="card scroll-mt-24 p-2 shadow-xs">
       {isLoading ? (
         <div className="rounded-[12px] bg-paper p-6 sm:p-7" role="status" aria-live="polite">
           <div className="flex items-center justify-between gap-3">

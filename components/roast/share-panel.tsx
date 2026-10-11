@@ -1,18 +1,16 @@
 "use client";
 
-import { Check, Copy, Download, Lock, Share2 } from "lucide-react";
+import { Check, Download, Link2, Lock, Share2 } from "lucide-react";
 import { useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
 import { trackEvent } from "@/lib/analytics";
+import { challengeText, challengeUrl } from "@/lib/challenge";
 import { saveBlob } from "@/lib/export/canvas";
 import { renderRoastCard } from "@/lib/export/roast-card";
+import { scoreBand } from "@/lib/score";
 import { ScoreBandPill } from "@/components/roast/score-dial";
 
 type Notify = (message: string) => void;
-
-export function shareTextFor(analysis: ResumeAnalysis) {
-  return `My CV scored ${Math.round(analysis.score)}/100 on VibeJudge and got roasted. Think yours can survive? vibejudge.app`;
-}
 
 export async function downloadRoastCard(analysis: ResumeAnalysis, includeRoast: boolean, notify: Notify) {
   try {
@@ -25,9 +23,22 @@ export async function downloadRoastCard(analysis: ResumeAnalysis, includeRoast: 
   }
 }
 
+/** Copies the roast-off link. Shared by the share panel and the roast-off card. */
+export async function copyChallengeLink(score: number, notify: Notify) {
+  try {
+    await navigator.clipboard.writeText(challengeText(score, scoreBand(score).label));
+    trackEvent("challenge_link_shared");
+    notify("Roast-off link copied. Send it to someone brave.");
+    return true;
+  } catch {
+    notify(`Couldn't access the clipboard. Share this link: ${challengeUrl(score)}`);
+    return false;
+  }
+}
+
 /**
  * Optional, explicit sharing. Nothing leaves the browser unless the user downloads or shares.
- * The card never contains the CV file, the candidate's name, or contact details.
+ * The card and link never contain the CV, the candidate's name, or contact details.
  */
 export function SharePanel({
   analysis,
@@ -42,16 +53,13 @@ export function SharePanel({
 }) {
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
   const [copied, setCopied] = useState(false);
-  const shareText = shareTextFor(analysis);
+  const tier = scoreBand(analysis.score);
+  const text = challengeText(analysis.score, tier.label);
 
-  async function copyText() {
-    try {
-      await navigator.clipboard.writeText(shareText);
+  async function copyLink() {
+    if (await copyChallengeLink(analysis.score, notify)) {
       setCopied(true);
-      trackEvent("share_clicked");
       window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      notify("Couldn't access the clipboard. Select the text and copy it manually.");
     }
   }
 
@@ -69,12 +77,13 @@ export function SharePanel({
       const file = new File([blob], "vibejudge-roast.png", { type: "image/png" });
 
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: shareText, title: "My VibeJudge CV roast" });
+        await navigator.share({ files: [file], text, title: "Beat my CV score" });
+        trackEvent("challenge_link_shared");
       } else if (navigator.share) {
-        await navigator.share({ text: shareText, title: "My VibeJudge CV roast", url: "https://vibejudge.app" });
+        await navigator.share({ text, title: "Beat my CV score" });
+        trackEvent("challenge_link_shared");
       } else {
-        await copyText();
-        notify("Sharing isn't supported here, so we copied the text instead.");
+        await copyLink();
       }
     } catch (cause) {
       if (!(cause instanceof DOMException && cause.name === "AbortError")) {
@@ -86,10 +95,10 @@ export function SharePanel({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,320px)_1fr] lg:items-center">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,300px)_1fr] lg:items-center">
       {/* Live preview of the card */}
-      <div className="mx-auto w-full max-w-[320px]" aria-hidden>
-        <div className="flex aspect-[4/5] flex-col rounded-card border border-line bg-paper p-5 shadow-card">
+      <div className="mx-auto w-full max-w-[300px]" aria-hidden>
+        <div className="flex aspect-[4/5] flex-col rounded-card border border-line bg-paper p-5">
           <div className="flex items-center justify-between">
             <span className="font-display text-[13px] font-semibold">VibeJudge</span>
             <span className="text-[8px] font-semibold tracking-[0.14em] text-ink-3">CV ROAST REPORT</span>
@@ -114,44 +123,43 @@ export function SharePanel({
             <p className="mt-2.5 line-clamp-5 text-[10px] leading-relaxed text-ink-2">{analysis.summary}</p>
           )}
           <div className="mt-auto border-t border-line-strong/70 pt-2.5">
-            <p className="font-display text-[10px] font-semibold">Think your CV can survive?</p>
-            <p className="text-[8px] text-ink-3">Get roasted free at vibejudge.app</p>
+            <p className="font-display text-[10px] font-semibold">Think you can beat {Math.round(analysis.score)}?</p>
+            <p className="text-[8px] text-ink-3">vibejudge.app/?vs={Math.round(analysis.score)}</p>
           </div>
         </div>
       </div>
 
       <div>
-        <h3 className="font-display text-display-md font-semibold">Make it shareable</h3>
+        <h3 className="font-display text-display-md font-semibold">Post it. Dare someone to beat it.</h3>
         <p className="mt-2 max-w-lg text-[15px] leading-7 text-ink-2">
-          Download a clean roast card for LinkedIn, X, or the group chat. It shows your score and verdict — never your
-          name, contact details, or CV.
+          Your card and roast-off link only show your score and verdict — never your name, contact details, or CV.
         </p>
 
-        <label className="mt-5 flex max-w-lg cursor-pointer items-start gap-3 rounded-control border border-line bg-white p-3.5 transition hover:border-line-strong">
+        <label className="mt-5 flex max-w-lg cursor-pointer items-start gap-3 text-sm leading-6">
           <input
             type="checkbox"
             checked={includeRoast}
             onChange={(event) => onIncludeRoastChange(event.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[#e2492f]"
+            className="mt-1 h-4 w-4 shrink-0 accent-[#e2492f]"
           />
-          <span className="text-sm leading-6">
-            <span className="font-semibold text-ink">Include the roast lines</span>
-            <span className="block text-ink-3">Turn off to share only your score, verdict, and summary.</span>
+          <span>
+            <span className="font-medium text-ink">Include the roast lines</span>
+            <span className="text-ink-3"> — turn off to share only your score and verdict.</span>
           </span>
         </label>
 
-        <div className="mt-5 flex flex-wrap gap-2.5">
-          <button type="button" onClick={download} disabled={busy !== null} aria-busy={busy === "download"} className="btn btn-dark">
-            <Download size={16} aria-hidden />
-            {busy === "download" ? "Rendering…" : "Download PNG"}
-          </button>
-          <button type="button" onClick={share} disabled={busy !== null} aria-busy={busy === "share"} className="btn btn-secondary">
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button type="button" onClick={share} disabled={busy !== null} aria-busy={busy === "share"} className="btn btn-dark">
             <Share2 size={16} aria-hidden />
             {busy === "share" ? "Preparing…" : "Share"}
           </button>
-          <button type="button" onClick={copyText} className="btn btn-ghost">
-            {copied ? <Check size={16} className="text-moss" aria-hidden /> : <Copy size={16} aria-hidden />}
-            {copied ? "Copied" : "Copy text"}
+          <button type="button" onClick={copyLink} className="btn btn-secondary">
+            {copied ? <Check size={16} className="text-moss" aria-hidden /> : <Link2 size={16} aria-hidden />}
+            {copied ? "Copied" : "Copy roast-off link"}
+          </button>
+          <button type="button" onClick={download} disabled={busy !== null} aria-busy={busy === "download"} className="btn btn-ghost">
+            <Download size={16} aria-hidden />
+            {busy === "download" ? "Rendering…" : "Download PNG"}
           </button>
         </div>
         <p className="mt-4 flex items-center gap-1.5 text-xs text-ink-3">

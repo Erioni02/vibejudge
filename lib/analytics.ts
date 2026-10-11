@@ -11,7 +11,10 @@ export type FunnelEvent =
   | "roast_card_downloaded"
   | "cv_generation_started"
   | "cv_generation_failed"
-  | "cv_downloaded";
+  | "cv_downloaded"
+  | "challenge_opened"
+  | "challenge_completed"
+  | "challenge_link_shared";
 
 export function trackEvent(event: FunnelEvent) {
   if (typeof window === "undefined") return;

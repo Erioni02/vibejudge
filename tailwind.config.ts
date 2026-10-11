@@ -53,8 +53,8 @@ const config: Config = {
       },
       boxShadow: {
         xs: "0 1px 2px rgba(22, 19, 15, 0.06)",
-        card: "0 1px 2px rgba(22, 19, 15, 0.04), 0 10px 28px -14px rgba(22, 19, 15, 0.16)",
-        lift: "0 2px 4px rgba(22, 19, 15, 0.04), 0 28px 56px -28px rgba(22, 19, 15, 0.32)",
+        card: "0 1px 2px rgba(22, 19, 15, 0.04), 0 8px 24px -16px rgba(22, 19, 15, 0.12)",
+        lift: "0 1px 2px rgba(22, 19, 15, 0.04), 0 20px 44px -24px rgba(22, 19, 15, 0.22)",
         soft: "0 1px 2px rgba(22, 19, 15, 0.04), 0 10px 28px -14px rgba(22, 19, 15, 0.16)"
       },
       transitionTimingFunction: {
