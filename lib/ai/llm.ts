@@ -12,14 +12,14 @@
  * Anything parked is still tried as a last resort, so the chain can never lock itself out completely.
  *
  * Env (all lists comma-separated):
- *   AI_PROVIDER_ORDER=nvidia,ollama,opencode
- *   NVIDIA_API_KEYS / NVIDIA_MODELS        OLLAMA_API_KEYS / OLLAMA_MODELS        OPENCODE_API_KEYS / OPENCODE_MODELS
+ *   AI_PROVIDER_ORDER=nvidia,ollama
+ *   NVIDIA_API_KEYS / NVIDIA_MODELS        OLLAMA_API_KEYS / OLLAMA_MODELS
  *   (single-value OLLAMA_API_KEY / *_MODEL still work)
  */
 
 export type ChatMessage = { role: "system" | "user"; content: string };
 
-type ProviderName = "nvidia" | "ollama" | "opencode";
+type ProviderName = "nvidia" | "ollama";
 
 type CallOptions = { json: boolean; signal: AbortSignal };
 
@@ -41,8 +41,7 @@ const LONG_COOLDOWN_MS = 30 * 60_000;
 
 const defaultModels: Record<ProviderName, string[]> = {
   nvidia: ["deepseek-ai/deepseek-v4.1-flash", "z-ai/glm-5.3-flash", "nvidia/nemotron-3-super-120b-a12b"],
-  ollama: ["gemma4:31b", "gpt-oss:20b", "nemotron-3-nano:30b"], // fastest first (measured ~5–13s, ~21s, ~35s)
-  opencode: ["nemotron-3.5-lightning-free", "ling-3.1-flash-free", "mimo-v2.6-flash-free"]
+  ollama: ["gemma4:31b", "gpt-oss:20b", "nemotron-3-nano:30b"] // fastest first (measured ~5–13s, ~21s, ~35s)
 };
 
 function listFrom(...names: string[]) {
@@ -99,17 +98,10 @@ function providers(): Provider[] {
         const payload = await response.json();
         return String(payload.message?.content ?? payload.response ?? "");
       }
-    },
-    opencode: {
-      name: "opencode",
-      keys: listFrom("OPENCODE_API_KEYS", "OPENCODE_API_KEY"),
-      models: modelsFor("opencode"),
-      call: (key, model, messages, options) =>
-        openAiCompatible(process.env.OPENCODE_BASE_URL ?? "https://opencode.ai/zen/v1", key, model, messages, options)
     }
   };
 
-  const order = (process.env.AI_PROVIDER_ORDER ?? "nvidia,ollama,opencode")
+  const order = (process.env.AI_PROVIDER_ORDER ?? "nvidia,ollama")
     .split(",")
     .map((name) => name.trim().toLowerCase())
     .filter((name): name is ProviderName => name in all);

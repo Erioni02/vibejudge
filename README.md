@@ -28,7 +28,7 @@ VibeJudge is a free AI CV platform for `vibejudge.app` with one job: roast your 
 - React
 - Tailwind CSS (design tokens in `tailwind.config.ts`, component classes in `app/globals.css`)
 - jsPDF (client-side PDF export, dynamically imported)
-- NVIDIA (DeepSeek V4.1 Flash), Ollama Cloud, and OpenCode Zen with automatic failover
+- NVIDIA (DeepSeek V4.1 Flash) and Ollama Cloud with automatic failover
 
 ## Setup
 
@@ -41,7 +41,7 @@ npm run dev
 Fill in `.env.local` (see `.env.example`):
 
 ```env
-AI_PROVIDER_ORDER=nvidia,ollama,opencode
+AI_PROVIDER_ORDER=nvidia,ollama
 
 NVIDIA_API_KEYS=key1,key2,key3
 NVIDIA_MODELS=deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5.3-flash,nvidia/nemotron-3-super-120b-a12b
@@ -49,8 +49,6 @@ NVIDIA_MODELS=deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5.3-flash,nvidia/nemotron
 OLLAMA_API_KEYS=key1,key2,key3
 OLLAMA_MODELS=gemma4:31b,gpt-oss:20b,nemotron-3-nano:30b
 
-OPENCODE_API_KEYS=key1,key2,key3
-OPENCODE_MODELS=nemotron-3.5-lightning-free,ling-3.1-flash-free,mimo-v2.6-flash-free
 ```
 
 Never expose keys with a `NEXT_PUBLIC_` prefix. All AI calls happen server-side.
