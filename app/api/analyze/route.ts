@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { analyzeResumeWithOllama } from "@/lib/ai/ollama";
+import { AiNotConfiguredError, AiUnavailableError } from "@/lib/ai/llm";
+import { analyzeResume } from "@/lib/ai/resume";
 import { extractResumeText } from "@/lib/resume/parser";
 import { validateResumeFile, validateResumeText } from "@/lib/validation/resume";
 import { clientIp, createRateLimiter } from "@/lib/server/rate-limit";
@@ -51,17 +52,15 @@ export async function POST(request: Request) {
       return error(textValidation.message);
     }
 
-    const analysis = await analyzeResumeWithOllama(textValidation.text);
+    const analysis = await analyzeResume(textValidation.text);
     return NextResponse.json({ analysis });
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "Unknown server error";
-
-    if (message.includes("OLLAMA_API_KEY")) {
-      return error("The AI judge is not configured yet. Add OLLAMA_API_KEY to .env.local.", 503);
+    if (cause instanceof AiNotConfiguredError) {
+      return error("The AI judge is not configured yet. Add provider API keys to .env.local.", 503);
     }
 
-    if (message.includes("aborted")) {
-      return error("The AI judge took too long. Give it another shot.", 504);
+    if (cause instanceof AiUnavailableError) {
+      return error("The AI judge is swamped right now. Give it another shot in a minute.", 503);
     }
 
     return error("We could not roast your resume right now. Give it another shot.", 500);

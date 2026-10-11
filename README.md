@@ -28,7 +28,7 @@ VibeJudge is a free AI CV platform for `vibejudge.app` with one job: roast your 
 - React
 - Tailwind CSS (design tokens in `tailwind.config.ts`, component classes in `app/globals.css`)
 - jsPDF (client-side PDF export, dynamically imported)
-- Ollama API with `gpt-oss:120b-cloud`
+- NVIDIA (DeepSeek V4.1 Flash), Ollama Cloud, and OpenCode Zen with automatic failover
 
 ## Setup
 
@@ -38,15 +38,28 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Fill in `.env.local`:
+Fill in `.env.local` (see `.env.example`):
 
 ```env
-OLLAMA_API_KEY=
-OLLAMA_BASE_URL=https://ollama.com
+AI_PROVIDER_ORDER=nvidia,ollama,opencode
+
+NVIDIA_API_KEYS=key1,key2,key3
+NVIDIA_MODEL=deepseek-ai/deepseek-v4.1-flash
+
+OLLAMA_API_KEYS=key1,key2
 OLLAMA_MODEL=gpt-oss:120b-cloud
+
+OPENCODE_API_KEYS=key1,key2
+OPENCODE_MODEL=        # a model id from https://opencode.ai/zen/v1/models
 ```
 
-Never expose `OLLAMA_API_KEY` with a `NEXT_PUBLIC_` prefix. AI calls happen in `app/api/analyze/route.ts`.
+Never expose keys with a `NEXT_PUBLIC_` prefix. All AI calls happen server-side.
+
+## AI failover
+
+`lib/ai/llm.ts` tries providers in `AI_PROVIDER_ORDER`, and each provider's keys in order. An attempt fails over to the next key/provider on network errors, timeouts (25s per attempt, 55s total), HTTP errors, or output that fails validation (bad JSON, schema mismatch, too-short CV). A key that fails twice is skipped for 2 minutes; a 429 parks it immediately; bad keys (401/403) or retired models (404/410) are parked for 30 minutes. Cooling-down keys remain a last resort, so the chain never fully locks itself out. Server logs show which provider served each request (`[ai] analyze ok via ollama …`).
+
+Providers with no keys (or, for OpenCode, no `OPENCODE_MODEL`) are skipped. Check each provider's terms: free tiers are often not licensed for production traffic.
 
 ## Development
 
@@ -132,7 +145,7 @@ All page data lives in `data/`. Adding a new resume example, guide, or roast pag
 
 ## Deployment
 
-Deploy as a standard Next.js application. Configure the Ollama environment variables in the hosting provider and keep `.env.local` out of source control.
+Deploy as a standard Next.js application. Configure the AI provider environment variables in the hosting provider and keep `.env.local` out of source control.
 
 ## Privacy
 
