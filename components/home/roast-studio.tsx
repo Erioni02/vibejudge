@@ -11,18 +11,25 @@ import { validateResumeFile } from "@/lib/validation/resume";
 import { HeroPreview } from "@/components/home/hero-preview";
 import { UploadPanel, type InputMode, type RoastStatus } from "@/components/home/upload-panel";
 import { RoastReport } from "@/components/roast/roast-report";
-import { CvWorkspace } from "@/components/cv/cv-workspace";
+import { CvWorkspace, type CvOrigin } from "@/components/cv/cv-workspace";
+import { CvBuilder } from "@/components/home/cv-builder";
+import { emptyBuilderAnswers, type BuilderAnswers } from "@/lib/validation/builder";
 
 type CvStatus = "idle" | "loading" | "done" | "error";
 
 class AbortedError extends Error {}
 
 /** POSTs form data and always returns a friendly error message, even for non-JSON failures (e.g. 413 from the host). */
-async function postForm<T>(url: string, body: FormData, signal: AbortSignal): Promise<T> {
+async function postForm<T>(url: string, body: FormData | string, signal: AbortSignal): Promise<T> {
   let response: Response;
 
   try {
-    response = await fetch(url, { method: "POST", body, signal });
+    response = await fetch(url, {
+      method: "POST",
+      body,
+      signal,
+      ...(typeof body === "string" ? { headers: { "Content-Type": "application/json" } } : {})
+    });
   } catch {
     if (signal.aborted) throw new AbortedError();
     throw new Error("Network hiccup. Check your connection and try again.");
@@ -60,7 +67,10 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
   const [cvStatus, setCvStatus] = useState<CvStatus>("idle");
   const [cvText, setCvText] = useState("");
   const [cvError, setCvError] = useState("");
-  const [cvUsedRoast, setCvUsedRoast] = useState(false);
+  const [cvOrigin, setCvOrigin] = useState<CvOrigin>("original");
+  const [builderAnswers, setBuilderAnswers] = useState<BuilderAnswers>(emptyBuilderAnswers);
+  // In "No CV yet" mode, the CV the builder wrote becomes the input for roasting and rewriting.
+  const [builtCvSource, setBuiltCvSource] = useState<string | null>(null);
 
   const [challengeScore, setChallengeScore] = useState<number | null>(initialChallengeScore);
   const [toast, setToast] = useState("");
@@ -134,13 +144,15 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
 
   function buildForm() {
     const form = new FormData();
-    if (mode === "text") form.append("text", text);
+    if (mode === "build" && builtCvSource) form.append("text", builtCvSource);
+    else if (mode === "text") form.append("text", text);
     else if (file) form.append("resume", file);
     return form;
   }
 
   async function roast() {
     roastAbort.current?.abort();
+    if (mode === "build") scrollToId("upload");
     const controller = new AbortController();
     roastAbort.current = controller;
 
@@ -176,7 +188,7 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
     const form = buildForm();
     if (analysis) form.append("analysis", JSON.stringify(analysis));
 
-    setCvUsedRoast(Boolean(analysis));
+    setCvOrigin(analysis ? "roast" : "original");
     setCvStatus("loading");
     setCvError("");
     trackEvent("cv_generation_started");
@@ -200,14 +212,47 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
     }
   }
 
+  async function buildFromAnswers() {
+    cvAbort.current?.abort();
+    const controller = new AbortController();
+    cvAbort.current = controller;
+
+    setAnalysis(null);
+    setRoastStatus("idle");
+    setBuiltCvSource(null);
+    setCvOrigin("answers");
+    setCvStatus("loading");
+    setCvError("");
+    scrollToId("new-cv");
+
+    try {
+      const payload = await postForm<{ cv: string }>("/api/build-cv", JSON.stringify({ answers: builderAnswers }), controller.signal);
+      setCvText(payload.cv);
+      setBuiltCvSource(payload.cv);
+      setCvStatus("done");
+      trackEvent("builder_completed");
+      notify("Your first CV is ready.");
+      scrollToId("new-cv");
+    } catch (cause) {
+      if (cause instanceof AbortedError) {
+        setCvStatus(cvText ? "done" : "idle");
+        return;
+      }
+      trackEvent("cv_generation_failed");
+      setCvStatus("error");
+      setCvError(cause instanceof Error ? cause.message : "We could not build your CV right now.");
+    }
+  }
+
   function startOver() {
     clearResults();
     setFile(null);
     setText("");
+    setBuiltCvSource(null);
     scrollToId("top");
   }
 
-  const sourceLabel = mode === "file" && file ? file.name : "Pasted CV text";
+  const sourceLabel = mode === "file" && file ? file.name : mode === "build" ? "Your new CV" : "Pasted CV text";
   const showResults = Boolean(analysis) || cvStatus !== "idle";
 
   return (
@@ -269,6 +314,43 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
                 onGenerate={generateCv}
                 onCancel={() => roastAbort.current?.abort()}
                 onViewResults={() => scrollToId("results")}
+                builder={
+                  builtCvSource ? (
+                    <div className="py-2 text-center">
+                      <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-moss-soft text-moss">
+                        <Check size={20} aria-hidden />
+                      </span>
+                      <p className="mt-3 font-display text-lg font-semibold tracking-tight">Your first CV is ready.</p>
+                      <p className="mt-1 text-sm text-ink-3">Download it, or see if it survives the judge.</p>
+                      <div className="mt-4 grid gap-2">
+                        {analysis ? (
+                          <button type="button" onClick={() => scrollToId("results")} className="btn btn-dark btn-lg w-full">
+                            View your roast
+                          </button>
+                        ) : (
+                          <button type="button" onClick={roast} disabled={cvStatus === "loading"} className="btn btn-primary btn-lg w-full">
+                            Now roast my new CV
+                          </button>
+                        )}
+                        <button type="button" onClick={() => scrollToId("new-cv")} className="btn btn-secondary w-full">
+                          View my CV
+                        </button>
+                        <button type="button" onClick={startOver} className="btn btn-ghost btn-sm">
+                          Start over with new answers
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                  <CvBuilder
+                    answers={builderAnswers}
+                    onChange={setBuilderAnswers}
+                    onSubmit={buildFromAnswers}
+                    busy={cvStatus === "loading"}
+                    error=""
+                    onStart={() => trackEvent("builder_started")}
+                  />
+                  )
+                }
               />
             </div>
 
@@ -316,24 +398,29 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
                   status={cvStatus}
                   cvText={cvText}
                   error={cvError}
-                  usedRoast={cvUsedRoast}
-                  onChange={setCvText}
-                  onRetry={generateCv}
+                  origin={cvOrigin}
+                  onChange={(next) => {
+                    setCvText(next);
+                    if (cvOrigin === "answers") setBuiltCvSource(next);
+                  }}
+                  onRetry={cvOrigin === "answers" ? buildFromAnswers : generateCv}
                   onCancel={() => cvAbort.current?.abort()}
                   notify={notify}
                 />
                 {!analysis && cvStatus === "done" ? (
                   <div className="mt-10 flex flex-col items-center gap-3 text-center">
-                    <p className="text-sm text-ink-2">Curious what the judge thinks of your original?</p>
+                    <p className="text-sm text-ink-2">
+                      {cvOrigin === "answers" ? "Think it can survive the judge?" : "Curious what the judge thinks of your original?"}
+                    </p>
                     <button
                       type="button"
                       onClick={() => {
                         scrollToId("upload");
                         void roast();
                       }}
-                      className="btn btn-secondary"
+                      className={`btn ${cvOrigin === "answers" ? "btn-primary" : "btn-secondary"}`}
                     >
-                      Roast my original CV
+                      {cvOrigin === "answers" ? "Now roast my new CV" : "Roast my original CV"}
                     </button>
                   </div>
                 ) : null}

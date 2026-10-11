@@ -14,7 +14,9 @@ export type FunnelEvent =
   | "cv_downloaded"
   | "challenge_opened"
   | "challenge_completed"
-  | "challenge_link_shared";
+  | "challenge_link_shared"
+  | "builder_started"
+  | "builder_completed";
 
 export function trackEvent(event: FunnelEvent) {
   if (typeof window === "undefined") return;

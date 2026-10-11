@@ -18,7 +18,9 @@ const allowedEvents = new Set([
   "cv_downloaded",
   "challenge_opened",
   "challenge_completed",
-  "challenge_link_shared"
+  "challenge_link_shared",
+  "builder_started",
+  "builder_completed"
 ]);
 
 const counts = new Map<string, number>();

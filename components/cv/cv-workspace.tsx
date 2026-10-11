@@ -8,6 +8,8 @@ import { saveBlob } from "@/lib/export/canvas";
 import { renderCvPdf, renderCvPng } from "@/lib/export/cv-files";
 import { CvDocument, CvDocumentSkeleton } from "@/components/cv/cv-document";
 
+export type CvOrigin = "original" | "roast" | "answers";
+
 const writingMessages = [
   "Reading your experience…",
   "Cutting the corporate fog…",
@@ -19,7 +21,7 @@ export function CvWorkspace({
   status,
   cvText,
   error,
-  usedRoast,
+  origin,
   onChange,
   onRetry,
   onCancel,
@@ -28,7 +30,7 @@ export function CvWorkspace({
   status: "loading" | "done" | "error";
   cvText: string;
   error: string;
-  usedRoast: boolean;
+  origin: CvOrigin;
   onChange: (text: string) => void;
   onRetry: () => void;
   onCancel: () => void;
@@ -101,9 +103,11 @@ export function CvWorkspace({
             {status === "done" ? "Clean, sharp, and still 100% you." : status === "loading" ? "Writing your new CV…" : "The CV writer hit a snag."}
           </h2>
           <p className="mt-3 text-[15px] leading-7 text-ink-2">
-            {usedRoast
+            {origin === "roast"
               ? "Rebuilt from your original CV and every fix in the roast — using only facts you already wrote."
-              : "Rebuilt from your original CV into a clean, recruiter-ready format — using only facts you already wrote."}
+              : origin === "answers"
+                ? "Written only from your answers — nothing invented. Edit anything, then download it."
+                : "Rebuilt from your original CV into a clean, recruiter-ready format — using only facts you already wrote."}
           </p>
         </div>
 

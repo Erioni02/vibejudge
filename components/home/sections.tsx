@@ -70,6 +70,11 @@ export const homeFaq = [
       "PDF, DOCX, or TXT files up to 6 MB. Scanned, image-only PDFs don't contain readable text — use “Paste text” instead."
   },
   {
+    question: "I don't have a CV yet. Can you make one?",
+    answer:
+      "Yes. Choose “No CV yet” and answer a few quick questions about your education, any work (part-time and informal jobs count), projects, and skills. The AI writes a clean first CV from your answers only, and then you can let the judge roast it."
+  },
+  {
     question: "Will the new CV make things up?",
     answer:
       "The CV writer is instructed to use only facts from your original CV: no invented employers, titles, dates, degrees, or metrics. AI can still slip, so review every detail before you send it."

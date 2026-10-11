@@ -15,6 +15,7 @@ VibeJudge is a free AI CV platform for `vibejudge.app` with one job: roast your 
 - Server-side text extraction and Ollama analysis
 - Structured results: score, verdict, roast, strengths, problems by severity, feedback by category, before/after rewrites, quick-win checklist, final verdict
 - Share card (1080×1350 PNG) with an optional "score only" mode, native share where supported
+- "No CV yet" guided interview that writes a first CV from the user's answers only
 - AI-generated CV rendered as a document; editable; downloadable as ATS-readable PDF (jsPDF, lazy-loaded) or PNG
 - Loading, cancel, error, and retry states for both AI calls; per-IP fair-use limits on both AI routes
 - Basic file validation, request limits, timeout handling, and friendly error states
@@ -44,7 +45,7 @@ Fill in `.env.local` (see `.env.example`):
 AI_PROVIDER_ORDER=nvidia,ollama
 
 NVIDIA_API_KEYS=key1,key2,key3
-NVIDIA_MODELS=deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5.3-flash,nvidia/nemotron-3-super-120b-a12b
+NVIDIA_MODELS=nvidia/nemotron-3-super-120b-a12b,deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5.3-flash
 
 OLLAMA_API_KEYS=key1,key2,key3
 OLLAMA_MODELS=gemma4:31b,gpt-oss:20b,nemotron-3-nano:30b
@@ -55,11 +56,17 @@ Never expose keys with a `NEXT_PUBLIC_` prefix. All AI calls happen server-side.
 
 ## AI failover
 
-`lib/ai/llm.ts` walks **provider → model → key**: model 1 on every key, then model 2, then model 3; if all of a provider's models fail, the next provider in `AI_PROVIDER_ORDER` takes over. An attempt fails over on network errors, timeouts (30s per attempt, 57s total, `maxDuration = 60` on the routes), HTTP errors, or output that fails validation (bad JSON, schema mismatch, too-short CV).
+`lib/ai/llm.ts` walks **provider → model → key**. Key problems (401/403 bad key, 429 rate limit) retry the same model on the next key; model problems (timeout, 5xx, invalid output) skip straight to the next model; when all of a provider's models fail, the next provider in `AI_PROVIDER_ORDER` takes over.
 
-Health is tracked so users don't wait on known-broken things: a bad key (401/403) is skipped for every model for 30 minutes; a retired model (404/410) is skipped for every key for 30 minutes; anything else gets 2 strikes (429: 1) before a 2-minute cool-down. Parked attempts remain a last resort. Server logs show what served each request (`[ai] analyze ok via ollama/gemma4:31b in 3989ms`).
+Time limits: 25s per attempt, 57s per request (`maxDuration = 60` on the AI routes), and a provider with a fallback after it gets at most 32s, so a slow provider can never starve the next one.
 
-Order models fastest-first: measured on Ollama Cloud, a full roast took ~5–13s on `gemma4:31b`, ~21s on `gpt-oss:20b`, and ~35s on `nemotron-3-nano:30b` (a reasoning model, which usually exceeds the 30s attempt limit). Check each provider's terms: free tiers are often not licensed for production traffic.
+Health persists across requests: bad keys are skipped for 30 min, retired models (404/410) for 30 min, models that time out for 5 min, and models with repeated 5xx/invalid output for 2 min. Parked attempts remain a last resort. Server logs show what served each request (`[ai] analyze ok via ollama/gemma4:31b in 5228ms`).
+
+Measured on free tiers (Oct 2026): NVIDIA Nemotron 3 Super returned a full roast in ~14–19s, while DeepSeek V4.1 Flash and GLM 5.3 Flash often timed out; on Ollama Cloud, `gemma4:31b` took ~5–13s, `gpt-oss:20b` ~21s, and `nemotron-3-nano:30b` ~35s. Order models fastest-first, and check each provider's terms: free tiers are often not licensed for production traffic.
+
+## "No CV yet" builder
+
+The third tab in the upload card is a 7-step interview (target role, contact, education, any work, projects/activities, skills, something they're proud of). Answers are validated by `lib/validation/builder.ts` on both client and server and sent as JSON to `/api/build-cv`, which writes a first CV using only what the user wrote. The result opens in the same CV workspace (edit, PDF/PNG, copy) and can then be roasted, and rewritten with the roast's fixes.
 
 ## Development
 

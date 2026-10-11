@@ -1,14 +1,22 @@
 /**
  * Multi-provider, multi-model LLM client with automatic failover.
  *
- * Order: provider → model → key. Each provider has up to 3 models and 2–3 keys. If a model fails on every
- * key, the next model is tried; when all of a provider's models fail, the next provider takes over.
- * An attempt fails over on network errors, timeouts, HTTP errors, or output the caller's validator rejects.
+ * Order: provider → model → key. Each provider has up to 3 models and 2–3 keys.
  *
- * Health is tracked at three levels so we don't keep waiting on something known to be broken:
- *   - key   (401/403: bad or revoked key)          → that key is skipped for every model, 30 min
- *   - model (404/410: model retired on provider)   → that model is skipped for every key, 30 min
- *   - attempt (timeouts, 5xx, 429, invalid output) → 2 strikes (429: 1) → skipped for 2 min
+ * What a failure means decides what happens next:
+ *   - key problems (401/403 bad key, 429 rate limit) → try the SAME model with the next key
+ *   - model problems (timeout, 5xx, invalid output)   → skip that model's other keys, go to the NEXT model
+ *   - when every model of a provider fails            → the next provider takes over
+ *
+ * Health persists across requests so later users don't wait on something known to be broken:
+ *   - bad key (401/403)            → key skipped for every model, 30 min
+ *   - retired model (404/410)      → model skipped for every key, 30 min
+ *   - model timed out              → model skipped for every key, 5 min
+ *   - 5xx / invalid output         → 2 strikes → model skipped for 2 min
+ *   - rate limited (429)           → that key+model pair skipped for 2 min
+ *
+ * Time: 25s per attempt, 57s per request, and a provider that has a fallback after it gets at most 32s,
+ * so one slow provider can never starve the next one.
  * Anything parked is still tried as a last resort, so the chain can never lock itself out completely.
  *
  * Env (all lists comma-separated):
@@ -33,14 +41,20 @@ type Provider = {
 export class AiNotConfiguredError extends Error {}
 export class AiUnavailableError extends Error {}
 
-const ATTEMPT_TIMEOUT_MS = 30_000;
+const ATTEMPT_TIMEOUT_MS = 25_000;
 const TOTAL_BUDGET_MS = 57_000;
+// A provider that isn't last in the chain may use at most this much of the budget,
+// so the fallback provider always gets a real chance (57s − 32s ≈ 25s).
+const PROVIDER_BUDGET_MS = 32_000;
 const STRIKES_BEFORE_COOLDOWN = 2;
 const COOLDOWN_MS = 2 * 60_000;
 const LONG_COOLDOWN_MS = 30 * 60_000;
+const TIMEOUT_COOLDOWN_MS = 5 * 60_000;
 
 const defaultModels: Record<ProviderName, string[]> = {
-  nvidia: ["deepseek-ai/deepseek-v4.1-flash", "z-ai/glm-5.3-flash", "nvidia/nemotron-3-super-120b-a12b"],
+  // Ordered by measured reliability on the free tier: Nemotron 3 Super returned a full roast in ~14s,
+  // while DeepSeek V4.1 Flash and GLM 5.3 Flash frequently timed out.
+  nvidia: ["nvidia/nemotron-3-super-120b-a12b", "deepseek-ai/deepseek-v4.1-flash", "z-ai/glm-5.3-flash"],
   ollama: ["gemma4:31b", "gpt-oss:20b", "nemotron-3-nano:30b"] // fastest first (measured ~5–13s, ~21s, ~35s)
 };
 
@@ -167,6 +181,10 @@ export async function completeWithFailover<T>(
   const healthy = attempts.filter((attempt) => !isParked(attempt));
   const ordered = [...healthy, ...attempts.filter(isParked)];
   const deadline = Date.now() + TOTAL_BUDGET_MS;
+  // Models that failed for model-level reasons during this request: don't retry them on other keys.
+  const skipModels = new Set<string>();
+  const providerStarted = new Map<ProviderName, number>();
+  const lastProvider = chain[chain.length - 1].name;
 
   for (const [index, { provider, model, key }] of ordered.entries()) {
     const remaining = deadline - Date.now();
@@ -174,9 +192,20 @@ export async function completeWithFailover<T>(
 
     // Skip a healthy-list attempt whose key or model got parked earlier in this same request.
     if (index < healthy.length && (parked(keyId(provider.name, key)) || parked(modelId(provider.name, model)))) continue;
+    if (skipModels.has(modelId(provider.name, model))) continue;
+
+    // Cap each non-final provider's share of the budget (not applied to last-resort retries).
+    let limit = Math.min(ATTEMPT_TIMEOUT_MS, remaining);
+    if (index < healthy.length && provider.name !== lastProvider) {
+      const startedAt = providerStarted.get(provider.name) ?? Date.now();
+      providerStarted.set(provider.name, startedAt);
+      const providerLeft = startedAt + PROVIDER_BUDGET_MS - Date.now();
+      if (providerLeft < 3_000) continue;
+      limit = Math.min(limit, providerLeft);
+    }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), Math.min(ATTEMPT_TIMEOUT_MS, remaining));
+    const timer = setTimeout(() => controller.abort(), limit);
     const started = Date.now();
 
     try {
@@ -189,9 +218,22 @@ export async function completeWithFailover<T>(
       const status = cause instanceof HttpError ? cause.status : null;
       const reason = controller.signal.aborted ? "timeout" : status ? `HTTP ${status}` : "invalid output";
 
-      if (status === 401 || status === 403) park(keyId(provider.name, key), LONG_COOLDOWN_MS);
-      else if (status === 404 || status === 410) park(modelId(provider.name, model), LONG_COOLDOWN_MS);
-      else strike(attemptId(provider.name, model, key), status === 429);
+      const model$ = modelId(provider.name, model);
+
+      if (status === 401 || status === 403) {
+        park(keyId(provider.name, key), LONG_COOLDOWN_MS); // key problem → next key, same model
+      } else if (status === 429) {
+        strike(attemptId(provider.name, model, key), true); // rate limit is per key → next key, same model
+      } else if (status === 404 || status === 410) {
+        park(model$, LONG_COOLDOWN_MS);
+        skipModels.add(model$);
+      } else if (controller.signal.aborted) {
+        park(model$, TIMEOUT_COOLDOWN_MS); // slow/overloaded model → next model
+        skipModels.add(model$);
+      } else {
+        strike(model$, false); // 5xx, network, or invalid output → next model
+        skipModels.add(model$);
+      }
 
       console.warn(`[ai] ${options.label} failed via ${provider.name}/${model} key …${key.slice(-4)}: ${reason}`);
     } finally {
