@@ -124,7 +124,7 @@ export function SharePanel({
           )}
           <div className="mt-auto border-t border-line-strong/70 pt-2.5">
             <p className="font-display text-[10px] font-semibold">Think you can beat {Math.round(analysis.score)}?</p>
-            <p className="text-[8px] text-ink-3">vibejudge.app/?vs={Math.round(analysis.score)}</p>
+            <p className="text-[8px] text-ink-3">Take the roast-off at vibejudge.app</p>
           </div>
         </div>
       </div>

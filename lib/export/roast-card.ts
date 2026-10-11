@@ -137,7 +137,7 @@ export async function renderRoastCard(analysis: ResumeAnalysis, options: RoastCa
   ctx.fillText(`Think your CV can beat ${Math.round(analysis.score)}?`, PAD, footerTop + 76);
   ctx.fillStyle = "#6f675c";
   ctx.font = `500 24px ${fonts.sans}`;
-  ctx.fillText(`Take the roast-off → vibejudge.app/?vs=${Math.round(analysis.score)}`, PAD, footerTop + 112);
+  ctx.fillText("Take the roast-off at vibejudge.app", PAD, footerTop + 112);
 
   return canvasToBlob(canvas);
 }

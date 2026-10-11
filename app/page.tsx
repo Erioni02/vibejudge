@@ -1,11 +1,5 @@
 import type { Metadata } from "next";
-import { JsonLd } from "@/components/json-ld";
-import { DemoSection } from "@/components/home/demo-section";
-import { RoastStudio } from "@/components/home/roast-studio";
-import { Faq, FinalCta, HowItWorks, Resources, TierShowcase, homeFaq } from "@/components/home/sections";
-import { SiteFooter } from "@/components/site/site-footer";
-import { SiteHeader } from "@/components/site/site-header";
-import { faqJsonLd } from "@/lib/seo";
+import { HomePage } from "@/components/home/home-page";
 import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -13,20 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return (
-    <>
-      <JsonLd data={faqJsonLd(homeFaq)} />
-      <SiteHeader />
-      <main>
-        <RoastStudio />
-        <HowItWorks />
-        <DemoSection />
-        <TierShowcase />
-        <Faq />
-        <FinalCta />
-        <Resources />
-      </main>
-      <SiteFooter />
-    </>
-  );
+  return <HomePage />;
 }

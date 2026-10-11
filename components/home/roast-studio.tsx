@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
 import { trackEvent } from "@/lib/analytics";
-import { parseChallengeScore } from "@/lib/challenge";
+import { parseLegacyChallenge } from "@/lib/challenge";
 import { scoreBand } from "@/lib/score";
 import { validateResumeFile } from "@/lib/validation/resume";
 import { HeroPreview } from "@/components/home/hero-preview";
@@ -48,7 +48,7 @@ function scrollToId(id: string) {
   window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
 }
 
-export function RoastStudio() {
+export function RoastStudio({ initialChallengeScore = null }: { initialChallengeScore?: number | null }) {
   const [mode, setMode] = useState<InputMode>("file");
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
@@ -62,7 +62,7 @@ export function RoastStudio() {
   const [cvError, setCvError] = useState("");
   const [cvUsedRoast, setCvUsedRoast] = useState(false);
 
-  const [challengeScore, setChallengeScore] = useState<number | null>(null);
+  const [challengeScore, setChallengeScore] = useState<number | null>(initialChallengeScore);
   const [toast, setToast] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
   const roastAbort = useRef<AbortController | null>(null);
@@ -79,14 +79,14 @@ export function RoastStudio() {
     return () => window.clearTimeout(timer);
   }, [toast, toastVisible]);
 
-  // Roast-off links (/?vs=54) carry only a score.
+  // Roast-off links (/k3x9q2mf, or legacy /?vs=54) carry only a score.
   useEffect(() => {
-    const score = parseChallengeScore(window.location.search);
+    const score = initialChallengeScore ?? parseLegacyChallenge(window.location.search);
     if (score !== null) {
       setChallengeScore(score);
       trackEvent("challenge_opened");
     }
-  }, []);
+  }, [initialChallengeScore]);
 
   useEffect(
     () => () => {
