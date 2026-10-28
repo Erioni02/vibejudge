@@ -27,13 +27,15 @@ const sections = [
   {
     title: "Analytics",
     body: [
-      "We count anonymous product events such as “roast completed” or “CV downloaded” to understand how the product is used. These events contain the event name only — never your CV text, name, or contact details."
+      "We run our own first-party analytics (no third-party trackers or ad pixels) to count things like page visits, completed roasts, shared roast-off links, and downloads. Events contain the event name, the page path without its query string, the referring website's domain, a coarse device type, browser family and country, and a random anonymous ID kept in your browser's local storage so repeat visits can be counted. They never contain your CV text, roast, name, contact details, file names, or IP address.",
+      "No fingerprinting is used. If your browser sends Do Not Track or Global Privacy Control, no analytics IDs are stored and no browser events are sent; clearing your site data resets the anonymous ID. Raw analytics events are deleted after 13 months."
     ]
   },
   {
     title: "Sharing",
     body: [
-      "Roast cards and downloaded CVs are created in your browser. Nothing is posted or shared anywhere unless you choose to download or share it yourself. Roast cards never include your name, contact details, or CV file."
+      "Roast cards and downloaded CVs are created in your browser. Nothing is posted or shared anywhere unless you choose to download or share it yourself. Roast cards never include your name, contact details, or CV file.",
+      "Roast-off links contain only your score. We count when a link is copied and when it is opened, using the link's code — never who you sent it to."
     ]
   },
   {

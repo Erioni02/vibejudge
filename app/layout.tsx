@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Serif, Inter } from "next/font/google";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { JsonLd } from "@/components/json-ld";
 import { webAppJsonLd } from "@/lib/seo";
 import { siteName, siteUrl } from "@/lib/site";
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${inter.variable} ${display.variable} ${serif.variable}`}>
       <body>
         <JsonLd data={webAppJsonLd()} />
+        <AnalyticsTracker />
         {children}
       </body>
     </html>

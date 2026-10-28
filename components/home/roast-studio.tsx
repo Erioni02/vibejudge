@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
-import { trackEvent } from "@/lib/analytics";
+import { analyticsHeaders, trackEvent } from "@/lib/analytics/client";
 import { parseLegacyChallenge } from "@/lib/challenge";
 import { scoreBand } from "@/lib/score";
 import { validateResumeFile } from "@/lib/validation/resume";
@@ -18,6 +18,8 @@ import { emptyBuilderAnswers, type BuilderAnswers } from "@/lib/validation/build
 type CvStatus = "idle" | "loading" | "done" | "error";
 
 class AbortedError extends Error {}
+/** The request never reached the server, so no server-side event exists for it. */
+class NetworkError extends Error {}
 
 /** POSTs form data and always returns a friendly error message, even for non-JSON failures (e.g. 413 from the host). */
 async function postForm<T>(url: string, body: FormData | string, signal: AbortSignal): Promise<T> {
@@ -28,11 +30,12 @@ async function postForm<T>(url: string, body: FormData | string, signal: AbortSi
       method: "POST",
       body,
       signal,
-      ...(typeof body === "string" ? { headers: { "Content-Type": "application/json" } } : {})
+      // Anonymous analytics ids, so the server can attribute the confirmed outcome. No CV data.
+      headers: { ...analyticsHeaders(), ...(typeof body === "string" ? { "Content-Type": "application/json" } : {}) }
     });
   } catch {
     if (signal.aborted) throw new AbortedError();
-    throw new Error("Network hiccup. Check your connection and try again.");
+    throw new NetworkError("Network hiccup. Check your connection and try again.");
   }
 
   let payload: (T & { error?: string }) | null = null;
@@ -55,7 +58,13 @@ function scrollToId(id: string) {
   window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
 }
 
-export function RoastStudio({ initialChallengeScore = null }: { initialChallengeScore?: number | null }) {
+export function RoastStudio({
+  initialChallengeScore = null,
+  challengeCode = null
+}: {
+  initialChallengeScore?: number | null;
+  challengeCode?: string | null;
+}) {
   const [mode, setMode] = useState<InputMode>("file");
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
@@ -94,9 +103,15 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
     const score = initialChallengeScore ?? parseLegacyChallenge(window.location.search);
     if (score !== null) {
       setChallengeScore(score);
-      trackEvent("challenge_opened");
+      trackEvent("roast_off_share_opened", { entityId: challengeCode ?? undefined, meta: { legacy: !challengeCode } });
     }
-  }, [initialChallengeScore]);
+  }, [initialChallengeScore, challengeCode]);
+
+  /** Something a visitor did on a shared roast-off page (only when they arrived through one). */
+  function trackRoastOff(action: "upload_started" | "roast_completed" | "generation_started") {
+    if (challengeScore === null) return;
+    trackEvent("roast_off_interaction", { entityId: challengeCode ?? undefined, meta: { action } });
+  }
 
   useEffect(
     () => () => {
@@ -133,7 +148,8 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
     }
 
     setFile(next);
-    trackEvent("resume_upload_started");
+    trackEvent("cv_upload_started", { meta: { input: "file" } });
+    trackRoastOff("upload_started");
   }
 
   function handleText(next: string) {
@@ -158,23 +174,22 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
 
     setRoastStatus("loading");
     setRoastError("");
-    trackEvent("resume_upload_completed");
 
+    // Roast started/completed/failed are recorded by /api/analyze itself, after the real outcome.
     try {
       const payload = await postForm<{ analysis: ResumeAnalysis }>("/api/analyze", buildForm(), controller.signal);
       setAnalysis(payload.analysis);
       setRoastStatus("done");
-      trackEvent("resume_analysis_completed");
-      trackEvent("resume_score_viewed");
-      trackEvent("resume_roast_viewed");
+      trackRoastOff("roast_completed");
       notify("Roast complete. Emotional damage delivered.");
       scrollToId("results");
     } catch (cause) {
       if (cause instanceof AbortedError) {
+        trackEvent("cv_roast_abandoned");
         setRoastStatus("idle");
         return;
       }
-      trackEvent("resume_analysis_failed");
+      if (cause instanceof NetworkError) trackEvent("client_error", { meta: { feature: "roast", reason: "network" } });
       setRoastStatus("error");
       setRoastError(cause instanceof Error ? cause.message : "We could not roast your CV right now.");
     }
@@ -191,22 +206,23 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
     setCvOrigin(analysis ? "roast" : "original");
     setCvStatus("loading");
     setCvError("");
-    trackEvent("cv_generation_started");
+    trackRoastOff("generation_started");
     scrollToId("new-cv");
 
+    // Generation started/completed/failed are recorded by /api/generate-cv after the real outcome.
     try {
       const payload = await postForm<{ cv: string }>("/api/generate-cv", form, controller.signal);
       setCvText(payload.cv);
       setCvStatus("done");
-      trackEvent("cv_generation_completed");
       notify("Your new CV is ready.");
       scrollToId("new-cv");
     } catch (cause) {
       if (cause instanceof AbortedError) {
+        trackEvent("cv_generation_abandoned");
         setCvStatus(cvText ? "done" : "idle");
         return;
       }
-      trackEvent("cv_generation_failed");
+      if (cause instanceof NetworkError) trackEvent("client_error", { meta: { feature: "generation", reason: "network" } });
       setCvStatus("error");
       setCvError(cause instanceof Error ? cause.message : "We could not generate your new CV right now.");
     }
@@ -230,15 +246,15 @@ export function RoastStudio({ initialChallengeScore = null }: { initialChallenge
       setCvText(payload.cv);
       setBuiltCvSource(payload.cv);
       setCvStatus("done");
-      trackEvent("builder_completed");
       notify("Your first CV is ready.");
       scrollToId("new-cv");
     } catch (cause) {
       if (cause instanceof AbortedError) {
+        trackEvent("cv_generation_abandoned");
         setCvStatus(cvText ? "done" : "idle");
         return;
       }
-      trackEvent("cv_generation_failed");
+      if (cause instanceof NetworkError) trackEvent("client_error", { meta: { feature: "builder", reason: "network" } });
       setCvStatus("error");
       setCvError(cause instanceof Error ? cause.message : "We could not build your CV right now.");
     }

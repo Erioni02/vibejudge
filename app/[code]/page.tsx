@@ -24,7 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ChallengePage({ params }: Props) {
-  const score = decodeChallenge((await params).code);
+  const code = (await params).code.toLowerCase();
+  const score = decodeChallenge(code);
   if (score === null) notFound();
-  return <HomePage challengeScore={score} />;
+  return <HomePage challengeScore={score} challengeCode={code} />;
 }

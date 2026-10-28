@@ -2,7 +2,7 @@
 
 import { AlertCircle, Check, Copy, Download, FileImage, Loader2, PenLine, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics/client";
 import { cvFileName, parseCv } from "@/lib/cv/parse";
 import { saveBlob } from "@/lib/export/canvas";
 import { renderCvPdf, renderCvPng } from "@/lib/export/cv-files";
@@ -70,8 +70,9 @@ export function CvWorkspace({
         saveBlob(await renderCvPng(parsed), cvFileName(parsed.name, "png"));
         notify("PNG downloaded.");
       }
-      trackEvent("cv_downloaded");
+      trackEvent("cv_download_completed", { meta: { format: kind } });
     } catch {
+      trackEvent("cv_download_failed", { meta: { format: kind } });
       notify(`Couldn't create the ${kind.toUpperCase()} in this browser. Try copying the text instead.`);
     } finally {
       setBusy(null);

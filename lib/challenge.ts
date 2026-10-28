@@ -45,10 +45,11 @@ export function parseLegacyChallenge(search: string): number | null {
   return score <= 100 ? score : null;
 }
 
-export function challengeUrl(score: number) {
-  return `${siteUrl}/${encodeChallenge(score)}`;
+/** One code per roast, so every copy/share of that roast points at the same link (and analytics can follow it). */
+export function challengeUrl(code: string) {
+  return `${siteUrl}/${code}`;
 }
 
-export function challengeText(score: number, tierLabel: string) {
-  return `My CV scored ${Math.round(score)}/100 on VibeJudge — "${tierLabel}". Think yours can beat it? ${challengeUrl(score)}`;
+export function challengeText(score: number, tierLabel: string, code: string) {
+  return `My CV scored ${Math.round(score)}/100 on VibeJudge — "${tierLabel}". Think yours can beat it? ${challengeUrl(code)}`;
 }

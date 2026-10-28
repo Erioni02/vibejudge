@@ -128,3 +128,38 @@ textarea {
     @apply animate-shimmer rounded bg-[linear-gradient(90deg,#efeae1_0%,#f7f4ee_50%,#efeae1_100%)] bg-[length:200%_100%];
   }
 }
+
+/* Private admin analytics — always dark, scoped so it never affects the public site. */
+.admin-theme {
+  color-scheme: dark;
+  --adm-bg: #0d0c0b;
+  --adm-surface: #151412;
+  --adm-elevated: #1d1b18;
+  --adm-line: rgba(255, 248, 235, 0.08);
+  --adm-line-strong: rgba(255, 248, 235, 0.18);
+  --adm-grid: rgba(255, 248, 235, 0.06);
+  --adm-text: #efebe4;
+  --adm-muted: #a8a094;
+  --adm-faint: #756e63;
+  --adm-accent: #f0603f;
+  --adm-accent-soft: rgba(240, 96, 63, 0.14);
+  --adm-good: #5cc29a;
+  --adm-good-soft: rgba(92, 194, 154, 0.12);
+  --adm-bad: #f07a6a;
+  --adm-bad-soft: rgba(240, 122, 106, 0.12);
+  --adm-warn: #e0a84a;
+  --adm-bar: rgba(255, 248, 235, 0.07);
+  --adm-s1: #f0603f;
+  --adm-s2: #e9e3d8;
+  --adm-s3: #8f877a;
+  --adm-s4: #5cc29a;
+  --adm-s5: #e0a84a;
+  background: var(--adm-bg);
+  color: var(--adm-text);
+  min-height: 100vh;
+}
+
+.admin-theme ::selection {
+  background: var(--adm-accent);
+  color: #fff;
+}

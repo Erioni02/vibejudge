@@ -1,47 +1,29 @@
 import { NextResponse } from "next/server";
+import { clientIp, createRateLimiter } from "@/lib/server/rate-limit";
+import { MAX_BODY_BYTES, ingestBatch } from "@/lib/server/analytics/ingest";
 
 export const runtime = "nodejs";
 
-const allowedEvents = new Set([
-  "resume_upload_started",
-  "resume_upload_completed",
-  "resume_analysis_completed",
-  "resume_analysis_failed",
-  "resume_score_viewed",
-  "resume_roast_viewed",
-  "cv_generation_completed",
-  "rehearse_cta_clicked",
-  "share_clicked",
-  "roast_card_downloaded",
-  "cv_generation_started",
-  "cv_generation_failed",
-  "cv_downloaded",
-  "challenge_opened",
-  "challenge_completed",
-  "challenge_link_shared",
-  "builder_started",
-  "builder_completed"
-]);
-
-const counts = new Map<string, number>();
+// A busy visitor sends a handful of batches per minute; this only stops floods.
+const rateLimit = createRateLimiter({ max: 60, windowMs: 60 * 1000 });
 
 export async function POST(request: Request) {
-  try {
-    const payload = (await request.json()) as { event?: string };
-
-    if (!payload.event || !allowedEvents.has(payload.event)) {
-      return NextResponse.json({ ok: false }, { status: 400 });
-    }
-
-    counts.set(payload.event, (counts.get(payload.event) ?? 0) + 1);
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: false }, { status: 400 });
+  if (!rateLimit(clientIp(request))) {
+    return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
-}
 
-export async function GET() {
-  return NextResponse.json({
-    events: Object.fromEntries([...counts.entries()].sort(([a], [b]) => a.localeCompare(b)))
-  });
+  const length = Number(request.headers.get("content-length") ?? 0);
+  if (length > MAX_BODY_BYTES) {
+    return NextResponse.json({ ok: false, error: "too_large" }, { status: 413 });
+  }
+
+  try {
+    const result = await ingestBatch(request);
+    if (result.status !== 200) return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
+    return NextResponse.json({ ok: true, accepted: result.accepted });
+  } catch (cause) {
+    // Never surface database details to the public endpoint.
+    console.warn("[analytics] ingest failed:", cause instanceof Error ? cause.message : cause);
+    return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
+  }
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { Check, Download, FileText, Link2, Loader2, RotateCcw, Sparkles, Swords } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
-import { trackEvent } from "@/lib/analytics";
+import { encodeChallenge } from "@/lib/challenge";
 import { bySeverity, scoreBand, severityMeta } from "@/lib/score";
 import { ScoreDial } from "@/components/roast/score-dial";
 import { BeforeAfter, CategoryFeedback, RoastLines, SectionTitle } from "@/components/roast/roast-parts";
@@ -38,10 +38,8 @@ export function RoastReport({
   const rootRef = useRef<HTMLDivElement>(null);
   const problems = bySeverity(analysis.problems);
   const tier = scoreBand(analysis.score);
-
-  useEffect(() => {
-    if (challengeScore !== null) trackEvent("challenge_completed");
-  }, [challengeScore]);
+  // One roast-off code per roast: every copy/share of this roast points to the same link.
+  const shareCode = useMemo(() => encodeChallenge(analysis.score), [analysis]);
 
   // Mobile: show the sticky action bar only while the report is on screen.
   useEffect(() => {
@@ -112,7 +110,7 @@ export function RoastReport({
                   {cvStatus === "loading" ? "Writing your new CV…" : "Generate a New CV with AI"}
                 </button>
               )}
-              <button type="button" onClick={() => copyChallengeLink(analysis.score, notify)} className="btn btn-secondary w-full">
+              <button type="button" onClick={() => copyChallengeLink(shareCode, analysis.score, notify)} className="btn btn-secondary w-full">
                 <Swords size={16} aria-hidden />
                 Challenge a friend
               </button>
@@ -129,7 +127,7 @@ export function RoastReport({
           {/* Report body */}
           <div className="min-w-0 space-y-6">
             {challengeScore !== null ? (
-              <RoastOffResult yours={analysis.score} theirs={challengeScore} notify={notify} />
+              <RoastOffResult yours={analysis.score} theirs={challengeScore} shareCode={shareCode} notify={notify} />
             ) : null}
 
             {/* The roast — centerpiece */}
@@ -158,7 +156,7 @@ export function RoastReport({
                   <p className="mt-1 text-sm leading-6 text-ink-3">
                     Send friends a link with your score. They roast their CV, then see who won. Only your score is shared.
                   </p>
-                  <button type="button" onClick={() => copyChallengeLink(analysis.score, notify)} className="btn btn-dark btn-sm mt-3">
+                  <button type="button" onClick={() => copyChallengeLink(shareCode, analysis.score, notify)} className="btn btn-dark btn-sm mt-3">
                     <Link2 size={14} aria-hidden />
                     Copy roast-off link
                   </button>
@@ -295,7 +293,7 @@ export function RoastReport({
         </div>
 
         <section className="card mt-6 p-6 sm:p-8" aria-label="Share your roast">
-          <SharePanel analysis={analysis} includeRoast={includeRoast} onIncludeRoastChange={setIncludeRoast} notify={notify} />
+          <SharePanel analysis={analysis} shareCode={shareCode} includeRoast={includeRoast} onIncludeRoastChange={setIncludeRoast} notify={notify} />
         </section>
       </div>
 
@@ -343,7 +341,17 @@ export function RoastReport({
 }
 
 /** Head-to-head result for visitors who arrived via a roast-off link. */
-function RoastOffResult({ yours, theirs, notify }: { yours: number; theirs: number; notify: (message: string) => void }) {
+function RoastOffResult({
+  yours,
+  theirs,
+  shareCode,
+  notify
+}: {
+  yours: number;
+  theirs: number;
+  shareCode: string;
+  notify: (message: string) => void;
+}) {
   const mine = Math.round(yours);
   const diff = mine - theirs;
   const points = (n: number) => `${n} point${n === 1 ? "" : "s"}`;
@@ -371,7 +379,7 @@ function RoastOffResult({ yours, theirs, notify }: { yours: number; theirs: numb
           </p>
           <p className="mt-0.5 text-sm text-ink-3">{sub}</p>
         </div>
-        <button type="button" onClick={() => copyChallengeLink(yours, notify)} className="btn btn-dark btn-sm shrink-0">
+        <button type="button" onClick={() => copyChallengeLink(shareCode, yours, notify)} className="btn btn-dark btn-sm shrink-0">
           <Swords size={14} aria-hidden />
           {diff >= 0 ? "Send your score back" : "Copy a rematch link"}
         </button>

@@ -3,7 +3,7 @@
 import { Check, Download, Link2, Lock, Share2 } from "lucide-react";
 import { useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics/client";
 import { challengeText, challengeUrl } from "@/lib/challenge";
 import { saveBlob } from "@/lib/export/canvas";
 import { renderRoastCard } from "@/lib/export/roast-card";
@@ -12,26 +12,45 @@ import { ScoreBandPill } from "@/components/roast/score-dial";
 
 type Notify = (message: string) => void;
 
+/**
+ * "Completed" means the PNG was rendered and handed to the browser's download. Browsers don't
+ * report whether the file was actually saved, so the dashboard labels this as a handed-off download.
+ */
 export async function downloadRoastCard(analysis: ResumeAnalysis, includeRoast: boolean, notify: Notify) {
+  const meta = { variant: includeRoast ? "full" : "score_only" } as const;
+  trackEvent("roast_image_download_started", { meta });
   try {
     const blob = await renderRoastCard(analysis, { includeRoast });
     saveBlob(blob, "vibejudge-roast.png");
-    trackEvent("roast_card_downloaded");
+    trackEvent("roast_image_download_completed", { meta });
     notify("Roast card downloaded.");
   } catch {
+    trackEvent("roast_image_download_failed", { meta });
     notify("Couldn't create the image in this browser. Try another browser.");
   }
 }
 
+const createdCodes = new Set<string>();
+
+/** A share link "exists" the first time it leaves the page (copied or natively shared). */
+export function recordShare(code: string, method: "clipboard" | "native") {
+  if (!createdCodes.has(code)) {
+    createdCodes.add(code);
+    trackEvent("roast_off_share_created", { entityId: code, meta: { method } });
+  }
+  trackEvent("roast_off_share_copied", { entityId: code, meta: { method }, immediate: true });
+}
+
 /** Copies the roast-off link. Shared by the share panel and the roast-off card. */
-export async function copyChallengeLink(score: number, notify: Notify) {
+export async function copyChallengeLink(code: string, score: number, notify: Notify) {
   try {
-    await navigator.clipboard.writeText(challengeText(score, scoreBand(score).label));
-    trackEvent("challenge_link_shared");
+    await navigator.clipboard.writeText(challengeText(score, scoreBand(score).label, code));
+    recordShare(code, "clipboard");
     notify("Roast-off link copied. Send it to someone brave.");
     return true;
   } catch {
-    notify(`Couldn't access the clipboard. Share this link: ${challengeUrl(score)}`);
+    trackEvent("client_error", { meta: { feature: "share", reason: "clipboard" } });
+    notify(`Couldn't access the clipboard. Share this link: ${challengeUrl(code)}`);
     return false;
   }
 }
@@ -42,11 +61,13 @@ export async function copyChallengeLink(score: number, notify: Notify) {
  */
 export function SharePanel({
   analysis,
+  shareCode,
   includeRoast,
   onIncludeRoastChange,
   notify
 }: {
   analysis: ResumeAnalysis;
+  shareCode: string;
   includeRoast: boolean;
   onIncludeRoastChange: (value: boolean) => void;
   notify: Notify;
@@ -54,10 +75,10 @@ export function SharePanel({
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
   const [copied, setCopied] = useState(false);
   const tier = scoreBand(analysis.score);
-  const text = challengeText(analysis.score, tier.label);
+  const text = challengeText(analysis.score, tier.label, shareCode);
 
   async function copyLink() {
-    if (await copyChallengeLink(analysis.score, notify)) {
+    if (await copyChallengeLink(shareCode, analysis.score, notify)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     }
@@ -71,17 +92,16 @@ export function SharePanel({
 
   async function share() {
     setBusy("share");
-    trackEvent("share_clicked");
     try {
       const blob = await renderRoastCard(analysis, { includeRoast });
       const file = new File([blob], "vibejudge-roast.png", { type: "image/png" });
 
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text, title: "Beat my CV score" });
-        trackEvent("challenge_link_shared");
+        recordShare(shareCode, "native");
       } else if (navigator.share) {
         await navigator.share({ text, title: "Beat my CV score" });
-        trackEvent("challenge_link_shared");
+        recordShare(shareCode, "native");
       } else {
         await copyLink();
       }

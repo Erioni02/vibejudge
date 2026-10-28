@@ -10,7 +10,7 @@ VibeJudge is a free AI CV platform for `vibejudge.app` with one job: roast your 
 
 ## Features
 
-- No authentication, signup, payments, or dashboard
+- No user accounts, signup, or payments (a private admin analytics dashboard is the only login)
 - PDF, DOCX, TXT upload (drag and drop) or pasted text, with client- and server-side validation
 - Server-side text extraction and Ollama analysis
 - Structured results: score, verdict, roast, strengths, problems by severity, feedback by category, before/after rewrites, quick-win checklist, final verdict
@@ -76,7 +76,20 @@ npm run build
 npm run start
 npm run lint
 npm run typecheck
+npm test                 # vitest; uses in-process Postgres (PGlite)
+TEST_DATABASE_URL=postgres://… npm test   # same suite through the production driver (drops analytics_events there!)
 ```
+
+## Analytics dashboard
+
+A private, first-party analytics dashboard lives at `/admin-analytics`. It covers traffic, sources, feature usage, the conversion funnel, Roast Off sharing, and a recent-activity feed. It needs `DATABASE_URL` plus three `ADMIN_*` variables, and is disabled (404) without them:
+
+```bash
+npm run db:migrate     # create the analytics_events table (idempotent)
+npm run admin:hash     # prints ADMIN_PASSWORD_HASH and ADMIN_SESSION_SECRET
+```
+
+Setup, the event catalogue, metric definitions, privacy rules, and known limitations: [docs/analytics.md](docs/analytics.md).
 
 ## Design system
 
