@@ -46,6 +46,22 @@ const ERROR_COPY: Record<string, { title: string; body: string }> = {
   schema_missing: {
     title: "Analytics table missing",
     body: "The database is reachable but the schema isn't installed. Run `npm run db:migrate` with DATABASE_URL set."
+  },
+  db_unreachable: {
+    title: "Can't reach the database",
+    body: "The server couldn't connect to the host in DATABASE_URL. On Supabase, use the Transaction pooler string (…pooler.supabase.com:6543) — the direct db.<project>.supabase.co host is IPv6-only and unreachable from Vercel. Redeploy after changing it."
+  },
+  db_timeout: {
+    title: "Database connection timed out",
+    body: "The database didn't answer in time. Check that DATABASE_URL points at the pooler (port 6543), that the Supabase project isn't paused, then redeploy."
+  },
+  db_auth_failed: {
+    title: "Database rejected the login",
+    body: "The username or password in DATABASE_URL is wrong. For the Supabase pooler the user is postgres.<project-ref>, and special characters in the password must be URL-encoded ($ → %24, * → %2A). Redeploy after changing it."
+  },
+  db_url_invalid: {
+    title: "DATABASE_URL is malformed",
+    body: "The connection string couldn't be parsed. Paste it again without quotes or spaces, with special password characters URL-encoded, then redeploy."
   }
 };
 
