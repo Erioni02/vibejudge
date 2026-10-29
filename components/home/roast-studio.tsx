@@ -1,7 +1,6 @@
 "use client";
 
 import { Check } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
 import { analyticsHeaders, trackEvent } from "@/lib/analytics/client";
@@ -299,16 +298,17 @@ export function RoastStudio({
                   CV beat it?
                 </span>
               </p>
-            ) : (
-              <p className="eyebrow animate-fade-up text-ember">Free AI CV roast · No sign-up</p>
-            )}
-            <h1 className="mt-5 animate-fade-up text-balance font-display text-display-xl font-semibold text-ink [animation-delay:60ms]">
-              Your CV is lying to you.{" "}
-              <span className="block font-serif font-normal italic tracking-[-0.02em] text-ember">Let&apos;s fix that.</span>
+            ) : null}
+            <h1
+              className={`animate-fade-up text-balance font-display text-display-xl font-semibold text-ink [animation-delay:60ms] ${
+                challengeScore !== null ? "mt-5" : ""
+              }`}
+            >
+              Your CV is getting ignored.{" "}
+              <span className="block font-serif font-normal italic tracking-[-0.02em] text-ember">Here&apos;s why.</span>
             </h1>
             <p className="mt-4 max-w-lg animate-fade-up text-[17px] leading-[1.7] text-ink-2 [animation-delay:120ms]">
-              Upload your CV and get a brutally honest AI roast with a score and specific fixes. Download the roast to share,
-              or let AI write you a brand-new CV. Completely free.
+              Upload it and get a score out of 100, a brutally honest roast, and the exact fixes. Takes under a minute.
             </p>
 
             <div className="mt-7 animate-fade-up [animation-delay:180ms]">
@@ -369,23 +369,9 @@ export function RoastStudio({
                 }
               />
             </div>
-
-            <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-ink-3">
-              {["100% free", "No account or email", "Your CV isn't stored"].map((item) => (
-                <li key={item} className="flex items-center gap-1.5">
-                  <Check size={14} className="text-moss" aria-hidden />
-                  {item}
-                </li>
-              ))}
-              <li>
-                <Link href="/privacy" className="link text-[13px] text-ink-3">
-                  Privacy
-                </Link>
-              </li>
-            </ul>
           </div>
 
-          <div className="hidden lg:block lg:pt-4">
+          <div className="hidden lg:block lg:self-center">
             <HeroPreview />
           </div>
         </div>

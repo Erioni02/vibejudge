@@ -20,7 +20,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <Link href="/#upload" className="btn btn-dark btn-sm">
+        <Link href="/#upload" className="btn btn-primary btn-sm">
           <span>
             Roast my CV<span className="hidden sm:inline"> — free</span>
           </span>
