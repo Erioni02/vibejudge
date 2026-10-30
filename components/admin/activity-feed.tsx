@@ -34,6 +34,8 @@ function describe(item: ActivityItem): { text: string; tone: Tone } {
       return { text: "A roast image failed to render", tone: "bad" };
     case "cv_download_completed":
       return { text: `A generated CV was downloaded (${String(meta.format ?? "").toUpperCase()})`, tone: "good" };
+    case "email_subscribed":
+      return { text: "Someone joined the updates email list", tone: "good" };
     case "client_error":
       return { text: `Browser error: ${String(meta.feature)} (${String(meta.reason)})`, tone: "bad" };
     default:

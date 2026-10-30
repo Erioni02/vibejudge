@@ -32,6 +32,13 @@ const sections = [
     ]
   },
   {
+    id: "updates",
+    title: "Email updates",
+    body: [
+      "If you choose to join our updates list, we save your email address, the page you signed up on, and the date. We use it only to email you about new VibeJudge features and tips, never sell or share it, and every email lets you unsubscribe. Your address is stored separately from analytics and is never linked to your anonymous analytics ID or to any CV."
+    ]
+  },
+  {
     title: "Sharing",
     body: [
       "Roast cards and downloaded CVs are created in your browser. Nothing is posted or shared anywhere unless you choose to download or share it yourself. Roast cards never include your name, contact details, or CV file.",
@@ -56,7 +63,7 @@ export default function PrivacyPage() {
       </p>
       <div className="mt-10 space-y-8">
         {sections.map((section) => (
-          <section key={section.title} className="border-t border-line pt-6">
+          <section key={section.title} id={section.id} className="scroll-mt-24 border-t border-line pt-6">
             <h2 className="font-display text-xl font-semibold tracking-tight">{section.title}</h2>
             {section.body.map((paragraph) => (
               <p key={paragraph} className="mt-3 leading-7 text-ink-2">

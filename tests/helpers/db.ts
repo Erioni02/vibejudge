@@ -1,10 +1,14 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import postgres from "postgres";
 import { setDbForTests, type Db } from "@/lib/server/db";
 
-const migration = readFileSync(new URL("../../db/migrations/001_analytics_events.sql", import.meta.url), "utf8");
+const migrationsDir = new URL("../../db/migrations/", import.meta.url);
+const migrations = readdirSync(migrationsDir)
+  .filter((name) => name.endsWith(".sql"))
+  .sort()
+  .map((name) => readFileSync(new URL(name, migrationsDir), "utf8"));
 
 /**
  * A real Postgres with the production migration applied. By default an in-process PGlite; set
@@ -22,7 +26,7 @@ export async function createTestDb() {
     db = { query: async <T,>(text: string, params: unknown[] = []) => (await sql.unsafe(text, params as never[])) as unknown as T[] };
     exec = (text) => sql.unsafe(text);
     close = () => sql.end();
-    await exec("drop table if exists analytics_events");
+    await exec("drop table if exists analytics_events; drop table if exists email_subscribers");
   } else {
     const pg = new PGlite();
     db = { query: async <T,>(text: string, params: unknown[] = []) => (await pg.query<T>(text, params as never[])).rows };
@@ -30,12 +34,12 @@ export async function createTestDb() {
     close = () => pg.close();
   }
 
-  await exec(migration);
+  for (const migration of migrations) await exec(migration);
   setDbForTests(db);
   return {
     db,
     exec,
-    reset: () => exec("truncate analytics_events"),
+    reset: () => exec("truncate analytics_events, email_subscribers"),
     close: async () => {
       setDbForTests(null);
       await close();

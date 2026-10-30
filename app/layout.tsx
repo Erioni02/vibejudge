@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Serif, Inter } from "next/font/google";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { JsonLd } from "@/components/json-ld";
+import { UpdatesPopup } from "@/components/updates-popup";
 import { webAppJsonLd } from "@/lib/seo";
 import { siteName, siteUrl } from "@/lib/site";
 import "./globals.css";
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <JsonLd data={webAppJsonLd()} />
         <AnalyticsTracker />
         {children}
+        <UpdatesPopup />
       </body>
     </html>
   );

@@ -36,7 +36,8 @@ const TRUSTED = [
   "cv_roast_failed",
   "cv_generation_started",
   "cv_generation_completed",
-  "cv_generation_failed"
+  "cv_generation_failed",
+  "email_subscribed"
 ];
 
 function list(names: string[]) {
@@ -164,7 +165,10 @@ const SERIES_EVENTS = [
   "roast_off_interaction",
   "roast_image_download_started",
   "roast_image_download_completed",
-  "roast_image_download_failed"
+  "roast_image_download_failed",
+  "email_popup_shown",
+  "email_popup_dismissed",
+  "email_subscribed"
 ];
 
 async function seriesRows(db: Db, range: ResolvedRange) {
@@ -468,6 +472,76 @@ async function roastOff(db: Db, range: ResolvedRange) {
   };
 }
 
+const POPUP_EVENTS = ["email_popup_shown", "email_popup_dismissed", "email_subscribed"];
+
+/**
+ * Email popup performance. Shown / closed / subscribed come from analytics events (so they respect
+ * Do Not Track and exclude the admin's own browser); list size comes from the subscribers table.
+ */
+async function emailCapture(db: Db, range: ResolvedRange) {
+  const [totals] = await db.query<Record<string, number>>(
+    `select
+       count(*) filter (where name = 'email_popup_shown')::int as shown,
+       count(distinct visitor_id) filter (where name = 'email_popup_shown')::int as shown_visitors,
+       count(*) filter (where name = 'email_popup_dismissed')::int as dismissed,
+       count(*) filter (where name = 'email_subscribed')::int as subscribed
+     from analytics_events
+     where occurred_at >= $1::timestamptz and occurred_at < $2::timestamptz
+       and name in (${list(POPUP_EVENTS)}) and ${TRUST}`,
+    [range.start, range.end]
+  );
+
+  const byTrigger = await db.query<{ trigger: string; shown: number; dismissed: number; subscribed: number }>(
+    `select coalesce(metadata->>'trigger', 'unknown') as trigger,
+            count(*) filter (where name = 'email_popup_shown')::int as shown,
+            count(*) filter (where name = 'email_popup_dismissed')::int as dismissed,
+            count(*) filter (where name = 'email_subscribed')::int as subscribed
+       from analytics_events
+      where occurred_at >= $1::timestamptz and occurred_at < $2::timestamptz
+        and name in (${list(POPUP_EVENTS)}) and ${TRUST}
+      group by 1 order by shown desc, trigger`,
+    [range.start, range.end]
+  );
+
+  const dismissMethods = await db.query<{ method: string; total: number }>(
+    `select coalesce(metadata->>'method', 'unknown') as method, count(*)::int as total
+       from analytics_events
+      where occurred_at >= $1::timestamptz and occurred_at < $2::timestamptz and name = 'email_popup_dismissed'
+      group by 1 order by total desc`,
+    [range.start, range.end]
+  );
+
+  // The list itself lives in its own table (migration 002). Report it as missing rather than failing the dashboard.
+  const [table] = await db.query<{ ready: boolean }>(`select to_regclass('email_subscribers') is not null as ready`);
+  let subscriberList: { total: number; newInRange: number; recent: { email: string; at: string; trigger: string | null }[] } | null = null;
+  if (table?.ready) {
+    const [counts] = await db.query<{ total: number; new_in_range: number }>(
+      `select count(*) filter (where unsubscribed_at is null)::int as total,
+              count(*) filter (where created_at >= $1::timestamptz and created_at < $2::timestamptz)::int as new_in_range
+         from email_subscribers`,
+      [range.start, range.end]
+    );
+    const recent = await db.query<{ email: string; created_at: Date; trigger: string | null }>(
+      `select email, created_at, trigger from email_subscribers where unsubscribed_at is null order by created_at desc limit 8`
+    );
+    subscriberList = {
+      total: n(counts?.total),
+      newInRange: n(counts?.new_in_range),
+      recent: recent.map((row) => ({ email: row.email, at: iso(row.created_at), trigger: row.trigger }))
+    };
+  }
+
+  return {
+    shown: n(totals?.shown),
+    shownVisitors: n(totals?.shown_visitors),
+    dismissed: n(totals?.dismissed),
+    subscribed: n(totals?.subscribed),
+    byTrigger: byTrigger.map((row) => ({ trigger: row.trigger, shown: n(row.shown), dismissed: n(row.dismissed), subscribed: n(row.subscribed) })),
+    dismissMethods: dismissMethods.map((row) => ({ method: row.method, total: n(row.total) })),
+    list: subscriberList
+  };
+}
+
 async function health(db: Db) {
   const [row] = await db.query<{ total: number; first_at: Date | null; last_at: Date | null }>(
     `select count(*)::int as total, min(occurred_at) as first_at, max(received_at) as last_at from analytics_events`
@@ -483,7 +557,7 @@ export async function dashboardData(db: Db, input: RangeInput) {
   const range = await resolveRange(db, input);
   if (!range) throw new Error("Could not resolve the date range.");
 
-  const [keys, rows, kpiTotals, sources, referrers, campaigns, landingPages, pages, devices, browsers, countries, visitorsSplit, featureData, funnelData, roastOffData, healthData] =
+  const [keys, rows, kpiTotals, sources, referrers, campaigns, landingPages, pages, devices, browsers, countries, visitorsSplit, featureData, funnelData, roastOffData, emailData, healthData] =
     await Promise.all([
       buckets(db, range),
       seriesRows(db, range),
@@ -500,6 +574,7 @@ export async function dashboardData(db: Db, input: RangeInput) {
       features(db, range),
       funnel(db, range),
       roastOff(db, range),
+      emailCapture(db, range),
       health(db)
     ]);
 
@@ -519,7 +594,10 @@ export async function dashboardData(db: Db, input: RangeInput) {
     shareInteractions: pick(rows, keys, "roast_off_interaction"),
     downloadsStarted: pick(rows, keys, "roast_image_download_started"),
     downloadsCompleted: pick(rows, keys, "roast_image_download_completed"),
-    downloadsFailed: pick(rows, keys, "roast_image_download_failed")
+    downloadsFailed: pick(rows, keys, "roast_image_download_failed"),
+    popupShown: pick(rows, keys, "email_popup_shown"),
+    popupDismissed: pick(rows, keys, "email_popup_dismissed"),
+    emailSubscribed: pick(rows, keys, "email_subscribed")
   };
 
   const kpiSeries: Record<KpiKey, number[]> = {
@@ -548,7 +626,8 @@ export async function dashboardData(db: Db, input: RangeInput) {
     traffic: { sources, referrers, campaigns, landingPages, pages, devices, browsers, countries, newVsReturning: visitorsSplit },
     features: featureData,
     funnel: funnelData,
-    roastOff: roastOffData
+    roastOff: roastOffData,
+    email: emailData
   };
 }
 
@@ -567,6 +646,7 @@ const ACTIVITY_EVENTS = [
   "roast_image_download_completed",
   "roast_image_download_failed",
   "cv_download_completed",
+  "email_subscribed",
   "client_error"
 ];
 

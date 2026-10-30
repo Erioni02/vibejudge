@@ -19,6 +19,9 @@ const failure = z
   })
   .strict();
 const generationMode = z.enum(["rewrite", "from_roast", "builder"]);
+/** What opened the email-updates popup. */
+export const popupTrigger = z.enum(["after_roast", "engaged", "exit_intent"]);
+export type PopupTrigger = z.infer<typeof popupTrigger>;
 
 /** Events the browser may send to /api/track. */
 export const clientEventMeta = {
@@ -45,6 +48,9 @@ export const clientEventMeta = {
   cv_download_completed: z.object({ format: z.enum(["pdf", "png"]) }).strict(),
   cv_download_failed: z.object({ format: z.enum(["pdf", "png"]) }).strict(),
 
+  email_popup_shown: z.object({ trigger: popupTrigger }).strict(),
+  email_popup_dismissed: z.object({ trigger: popupTrigger, method: z.enum(["close", "no_thanks", "escape"]) }).strict(),
+
   client_error: z
     .object({
       feature: z.enum(["roast", "generation", "builder", "share", "download"]),
@@ -61,7 +67,9 @@ export const serverEventMeta = {
   cv_roast_failed: failure,
   cv_generation_started: z.object({ mode: generationMode }).strict(),
   cv_generation_completed: z.object({ mode: generationMode }).strict(),
-  cv_generation_failed: failure.extend({ mode: generationMode }).strict()
+  cv_generation_failed: failure.extend({ mode: generationMode }).strict(),
+  /** A new address joined the updates list (repeat signups of the same address are not counted). */
+  email_subscribed: z.object({ trigger: popupTrigger }).strict()
 } as const;
 
 export type ClientEventName = keyof typeof clientEventMeta;

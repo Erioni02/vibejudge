@@ -63,6 +63,14 @@ Defined in `lib/analytics/events.ts`. Every event stores: `event_id` (UUID, idem
 
 **Errors (client):** `client_error` (`feature`, `reason: network|clipboard|render`) covers problems the server never saw.
 
+**Email updates popup:** `email_popup_shown` (`trigger: after_roast|engaged|exit_intent`) and `email_popup_dismissed` (`trigger`, `method: close|no_thanks|escape`) come from the client. `email_subscribed` (`trigger`) is a **server** event from `/api/subscribe`, written only when a new address is saved. The address itself never goes into analytics.
+
+## Email updates list
+
+`components/updates-popup.tsx` is a small corner card (a bottom sheet on phones). It never blocks the page or takes focus. It shows at most once per session: 5 s after a roast completes, otherwise after 45 s of visible time on the site, or on desktop exit intent. It never interrupts a roast in progress and is hidden on `/admin-analytics`, `/privacy` and `/terms`. Closing it snoozes it for 14 days (localStorage `vj_updates`); signing up hides it for good. Add `?preview=updates` to any page to show it immediately for a design check.
+
+Addresses are stored in `email_subscribers` (migration `002`, RLS on): the lower-cased email, trigger, signup path, country and date. No visitor or session id is stored, so the list can't be joined to analytics. `/api/subscribe` checks the origin and rate-limits to 5 requests per IP per 10 minutes. It uses a honeypot field and gives the same reply for new and existing addresses, and a repeat signup never re-subscribes someone whose `unsubscribed_at` is set. The dashboard's **Emails** section shows views, closes, signups and signup rate by trigger, plus the latest signups. **CSV** (`/api/admin/subscribers`, admin-only) exports every active address. To unsubscribe someone, set `unsubscribed_at = now()` on their row.
+
 ## Metric definitions
 
 All ranges are local calendar days in the dashboard's time zone (the browser's), `[start, end)`. The comparison period is the same number of days immediately before. "All time" has no comparison. A percentage change is shown only when the previous period has 10 or more; otherwise the absolute difference is shown.

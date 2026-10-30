@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
 import { analyticsHeaders, trackEvent } from "@/lib/analytics/client";
+import { announceRoast } from "@/components/updates-popup";
 import { parseLegacyChallenge } from "@/lib/challenge";
 import { scoreBand } from "@/lib/score";
 import { validateResumeFile } from "@/lib/validation/resume";
@@ -173,6 +174,7 @@ export function RoastStudio({
 
     setRoastStatus("loading");
     setRoastError("");
+    announceRoast("started");
 
     // Roast started/completed/failed are recorded by /api/analyze itself, after the real outcome.
     try {
@@ -180,9 +182,11 @@ export function RoastStudio({
       setAnalysis(payload.analysis);
       setRoastStatus("done");
       trackRoastOff("roast_completed");
+      announceRoast("completed");
       notify("Roast complete. Emotional damage delivered.");
       scrollToId("results");
     } catch (cause) {
+      announceRoast("failed");
       if (cause instanceof AbortedError) {
         trackEvent("cv_roast_abandoned");
         setRoastStatus("idle");

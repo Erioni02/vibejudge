@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, LogOut, RefreshCw } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Download, LogOut, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DashboardData, KpiKey } from "@/lib/server/analytics/queries";
 import { LogoMark } from "@/components/site/logo";
@@ -24,6 +24,7 @@ const SECTIONS = [
   { id: "features", label: "Features" },
   { id: "funnel", label: "Funnel" },
   { id: "roast-off", label: "Roast Off" },
+  { id: "emails", label: "Emails" },
   { id: "activity", label: "Activity" }
 ];
 
@@ -263,6 +264,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
       <Features data={data} granularity={granularity} />
       <Funnel data={data} />
       <RoastOff data={data} granularity={granularity} />
+      <EmailSignups data={data} granularity={granularity} />
       <p className="mt-10 text-xs leading-5 text-[var(--adm-faint)]">
         {formatNumber(data.health.totalEvents)} raw events stored
         {data.health.firstEventAt ? ` since ${new Date(data.health.firstEventAt).toLocaleDateString()}` : ""}
@@ -741,6 +743,105 @@ function RoastOff({ data, granularity }: { data: DashboardData; granularity: Gra
             <BarList rows={bestDays.map((day) => ({ label: formatBucket(day.key, granularity, true), value: day.value }))} empty="No sharing yet" />
           </Card>
         </div>
+      </div>
+    </>
+  );
+}
+
+const TRIGGER_LABELS: Record<string, string> = {
+  after_roast: "After a roast",
+  engaged: "After 45s on the site",
+  exit_intent: "Exit intent (desktop)"
+};
+
+const CLOSE_LABELS: Record<string, string> = {
+  close: "✕ button",
+  no_thanks: "“No thanks” link",
+  escape: "Esc key"
+};
+
+function EmailSignups({ data, granularity }: { data: DashboardData; granularity: Granularity }) {
+  const { email, series, buckets } = data;
+  const lines = [
+    { label: "Saw the popup", color: "var(--adm-s1)", values: series.popupShown },
+    { label: "Closed it", color: "var(--adm-s3)", values: series.popupDismissed, dashed: true },
+    { label: "Signed up", color: "var(--adm-s2)", values: series.emailSubscribed }
+  ];
+  const leftOpen = Math.max(email.shown - email.dismissed - email.subscribed, 0);
+
+  return (
+    <>
+      <SectionHeading
+        id="emails"
+        title="Email signups"
+        description="The “get updates” popup. It shows at most once per session (after a roast, after 45 seconds on the site, or on exit intent), and closing it hides it for 14 days. Popup counts come from analytics events, so your own browser and Do-Not-Track visitors aren't included; “On the list” is the real number of saved addresses."
+      />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <MiniStat label="Saw the popup" value={email.shown} hint={`${formatNumber(email.shownVisitors)} unique visitors`} />
+        <MiniStat
+          label="Closed it"
+          value={email.dismissed}
+          hint={`${pct(ratio(email.dismissed, email.shown), 1)} of views · ${formatNumber(leftOpen)} left it open`}
+        />
+        <MiniStat label="Signed up" value={email.subscribed} hint={`${pct(ratio(email.subscribed, email.shown), 1)} signup rate`} />
+        <MiniStat
+          label="On the list"
+          value={email.list ? email.list.total : "—"}
+          hint={email.list ? `+${formatNumber(email.list.newInRange)} new in this range` : "Run `npm run db:migrate` to create the list"}
+        />
+      </div>
+      <Card title="Popup over time" className="mt-3" action={<Legend series={lines} />}>
+        <LineChart series={lines} buckets={buckets} granularity={granularity} height={180} ariaLabel="Email popup views, closes and signups over time" />
+      </Card>
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        <Card title="What opened it" description="Signup rate by trigger." className="lg:col-span-2">
+          <Table
+            head={["Trigger", "Seen", "Closed", "Signed up", "Rate"]}
+            rows={email.byTrigger.map((row) => [
+              TRIGGER_LABELS[row.trigger] ?? row.trigger,
+              row.shown,
+              row.dismissed,
+              row.subscribed,
+              pct(ratio(row.subscribed, row.shown), 1)
+            ])}
+            empty="The popup hasn't been shown yet"
+          />
+        </Card>
+        <Card title="How people closed it">
+          <BarList rows={email.dismissMethods.map((row) => ({ label: CLOSE_LABELS[row.method] ?? row.method, value: row.total }))} empty="Nobody has closed it yet" />
+        </Card>
+        <Card
+          title="Latest signups"
+          description="Newest first. Download the CSV to import the full list into your email tool."
+          className="lg:col-span-3"
+          action={
+            email.list?.total ? (
+              // A file download from an API route, not a page navigation.
+              // eslint-disable-next-line @next/next/no-html-link-for-pages
+              <a
+                download
+                href="/api/admin/subscribers"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--adm-line-strong)] px-2.5 py-1 text-xs text-[var(--adm-muted)] hover:text-[var(--adm-text)]"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden />
+                CSV
+              </a>
+            ) : null
+          }
+        >
+          {email.list?.recent.length ? (
+            <ul className="divide-y divide-[var(--adm-line)] text-sm">
+              {email.list.recent.map((row) => (
+                <li key={row.email} className="flex items-center justify-between gap-3 py-2">
+                  <span className="truncate">{row.email}</span>
+                  <span className="shrink-0 text-xs text-[var(--adm-faint)]">{new Date(row.at).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="py-6 text-center text-sm text-[var(--adm-faint)]">{email.list ? "No signups yet" : "Subscriber table not created yet"}</p>
+          )}
+        </Card>
       </div>
     </>
   );
