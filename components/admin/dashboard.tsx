@@ -774,7 +774,7 @@ function EmailSignups({ data, granularity }: { data: DashboardData; granularity:
       <SectionHeading
         id="emails"
         title="Email signups"
-        description="The “get updates” popup. It shows at most once per session (after a roast, after 45 seconds on the site, or on exit intent), and closing it hides it for 14 days. Popup counts come from analytics events, so your own browser and Do-Not-Track visitors aren't included; “On the list” is the real number of saved addresses."
+        description="The “get updates” popup. It shows 5 seconds after a visitor’s roast lands (once per session), or on desktop exit intent for people who never roast. Closing it hides it for a day. Popup counts come from analytics events, so your own browser and Do-Not-Track visitors aren't included; “On the list” is the real number of saved addresses."
       />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <MiniStat label="Saw the popup" value={email.shown} hint={`${formatNumber(email.shownVisitors)} unique visitors`} />

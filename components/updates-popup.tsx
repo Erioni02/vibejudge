@@ -9,19 +9,19 @@ import { analyticsHeaders, trackEvent } from "@/lib/analytics/client";
 
 /**
  * "Get updates" email capture. A small corner card (bottom sheet on phones) that never blocks the page
- * or steals focus, and shows at most once per session at a good moment:
- * - a few seconds after a roast lands (the visitor is engaged and has just seen what the product does),
- * - otherwise after 45s of actually looking at the site,
- * - or on desktop exit intent.
- * Closing it snoozes it for 14 days; signing up hides it for good.
+ * or steals focus.
+ * - Main trigger: 5s after a roast lands, once per session. Most visitors roast, grab the result and
+ *   leave, so this is the moment that reaches them. Nothing shown earlier uses up this slot.
+ * - Fallback for people who never roast: desktop exit intent, once per session.
+ * Closing it snoozes it for a day; signing up hides it for good.
  */
 
 const STATE_KEY = "vj_updates";
 const SHOWN_KEY = "vj_updates_shown";
-const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
+const ROAST_SHOWN_KEY = "vj_updates_roast";
+const SNOOZE_MS = 24 * 60 * 60 * 1000;
 const AFTER_ROAST_DELAY_MS = 5000;
-const ENGAGED_AFTER_MS = 45_000;
-const EXIT_INTENT_AFTER_MS = 10_000;
+const EXIT_INTENT_AFTER_MS = 15_000;
 const HIDDEN_ON = ["/admin-analytics", "/privacy", "/terms"];
 
 /** Fired by the roast flow so the popup waits for (and then follows) a roast instead of interrupting it. */
@@ -51,12 +51,11 @@ function write(kind: "local" | "session", key: string, value: unknown) {
   }
 }
 
-function eligible() {
-  if (read<boolean>("session", SHOWN_KEY)) return false;
+/** Signed up, or closed it within the last day. */
+function optedOut() {
   const stored = read<Stored>("local", STATE_KEY);
-  if (stored?.status === "subscribed") return false;
-  if (stored?.status === "dismissed" && Date.now() - stored.at < SNOOZE_MS) return false;
-  return true;
+  if (stored?.status === "subscribed") return true;
+  return stored?.status === "dismissed" && Date.now() - stored.at < SNOOZE_MS;
 }
 
 const ERRORS: Record<string, string> = {
@@ -86,20 +85,37 @@ export function UpdatesPopup() {
   const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("hidden");
   const [view, setView] = useState<View>("form");
-  const [trigger, setTrigger] = useState<PopupTrigger>("engaged");
+  const [trigger, setTrigger] = useState<PopupTrigger>("after_roast");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [error, setError] = useState("");
-  const shown = useRef(false);
+  const isOpen = useRef(false);
+  // In-memory copies of the session flags, for browsers that block storage.
+  const shownThisLoad = useRef(false);
+  const shownAfterRoast = useRef(false);
   const roastBusy = useRef(false);
 
   const hiddenHere = HIDDEN_ON.some((path) => pathname.startsWith(path));
 
   const show = useCallback(
     (reason: PopupTrigger, force = false) => {
-      if (shown.current || (!force && (hiddenHere || !eligible()))) return;
-      shown.current = true;
+      if (isOpen.current) return;
+      if (!force) {
+        if (hiddenHere || optedOut()) return;
+        const alreadyShown =
+          reason === "after_roast"
+            ? shownAfterRoast.current || Boolean(read<boolean>("session", ROAST_SHOWN_KEY))
+            : shownThisLoad.current || Boolean(read<boolean>("session", SHOWN_KEY));
+        if (alreadyShown) return;
+      }
+      isOpen.current = true;
+      shownThisLoad.current = true;
       write("session", SHOWN_KEY, true);
+      if (reason === "after_roast") {
+        shownAfterRoast.current = true;
+        write("session", ROAST_SHOWN_KEY, true);
+      }
+      setView((current) => (current === "done" ? current : "form"));
       setTrigger(reason);
       setPhase("open");
       trackEvent("email_popup_shown", { meta: { trigger: reason } });
@@ -107,7 +123,16 @@ export function UpdatesPopup() {
     [hiddenHere]
   );
 
-  // Triggers. Each one is a no-op once the popup has been shown this session.
+  /** Plays the exit animation, then removes the card. The timer is a backstop for animationend, which
+   * doesn't fire in a background tab, so an invisible card can never be left catching clicks. */
+  const hideCard = useCallback(() => {
+    setPhase("closing");
+    window.setTimeout(() => {
+      isOpen.current = false;
+      setPhase("hidden");
+    }, 400);
+  }, []);
+
   useEffect(() => {
     if (hiddenHere) return;
     const startedAt = Date.now();
@@ -115,7 +140,7 @@ export function UpdatesPopup() {
 
     // Preview link for checking the design: /?preview=updates
     if (new URLSearchParams(window.location.search).get("preview") === "updates") {
-      roastTimer = window.setTimeout(() => show("engaged", true), 600);
+      roastTimer = window.setTimeout(() => show("after_roast", true), 600);
     }
 
     const onRoast = (event: Event) => {
@@ -126,16 +151,6 @@ export function UpdatesPopup() {
         roastTimer = window.setTimeout(() => show("after_roast"), AFTER_ROAST_DELAY_MS);
       }
     };
-
-    // Count only time the tab is actually visible, and never interrupt a roast in progress.
-    let visibleMs = 0;
-    let last = Date.now();
-    const tick = window.setInterval(() => {
-      const now = Date.now();
-      if (document.visibilityState === "visible") visibleMs += now - last;
-      last = now;
-      if (visibleMs >= ENGAGED_AFTER_MS && !roastBusy.current) show("engaged");
-    }, 1000);
 
     const desktop = window.matchMedia("(pointer: fine)").matches;
     const onLeave = (event: MouseEvent) => {
@@ -149,7 +164,6 @@ export function UpdatesPopup() {
     return () => {
       window.removeEventListener(ROAST_EVENT, onRoast);
       document.removeEventListener("mouseout", onLeave);
-      window.clearInterval(tick);
       window.clearTimeout(roastTimer);
     };
   }, [hiddenHere, show]);
@@ -161,9 +175,9 @@ export function UpdatesPopup() {
         write("local", STATE_KEY, { status: "dismissed", at: Date.now() } satisfies Stored);
         trackEvent("email_popup_dismissed", { meta: { trigger, method } });
       }
-      setPhase("closing");
+      hideCard();
     },
-    [phase, view, trigger]
+    [phase, view, trigger, hideCard]
   );
 
   useEffect(() => {
@@ -178,9 +192,9 @@ export function UpdatesPopup() {
   // After a successful signup, say thanks briefly and get out of the way.
   useEffect(() => {
     if (view !== "done" || phase !== "open") return;
-    const timer = window.setTimeout(() => setPhase("closing"), 3200);
+    const timer = window.setTimeout(hideCard, 3200);
     return () => window.clearTimeout(timer);
-  }, [view, phase]);
+  }, [view, phase, hideCard]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -222,7 +236,9 @@ export function UpdatesPopup() {
         aria-labelledby="vj-updates-title"
         aria-describedby="vj-updates-body"
         onAnimationEnd={(event) => {
-          if (event.target === event.currentTarget && phase === "closing") setPhase("hidden");
+          if (event.target !== event.currentTarget || phase !== "closing") return;
+          isOpen.current = false;
+          setPhase("hidden");
         }}
         className={`vj-popup pointer-events-auto relative w-full max-w-[380px] overflow-hidden rounded-card border border-line bg-white p-5 shadow-lift ${
           phase === "closing" ? "vj-popup-out" : "vj-popup-in"
