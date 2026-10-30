@@ -1,0 +1,28 @@
+{
+  "name": "vibejudge-cv-builder-promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cinematic 4K promo for the VibeJudge AI CV builder, built with Remotion",
+  "scripts": {
+    "dev": "remotion studio",
+    "voiceover": "tsx scripts/voiceover.ts",
+    "score": "python scripts/score.py",
+    "render": "remotion render CvBuilder16x9 out/VibeJudge_AI_CV_Builder_1440p.mp4 --scale=1.3333333333333333 --crf=17",
+    "render:vertical": "remotion render CvBuilder9x16 out/VibeJudge_AI_CV_Builder_1440x2560.mp4 --scale=1.3333333333333333 --crf=17",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.520",
+    "@remotion/google-fonts": "4.0.520",
+    "@remotion/media-utils": "4.0.520",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.520"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

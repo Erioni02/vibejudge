@@ -1,0 +1,248 @@
+{
+  "fps": 30,
+  "transition": 14,
+  "total": 1522,
+  "scenes": {
+    "blank": {
+      "from": 0,
+      "dur": 105
+    },
+    "nocv": {
+      "from": 105,
+      "dur": 195
+    },
+    "meet": {
+      "from": 300,
+      "dur": 108
+    },
+    "questions": {
+      "from": 408,
+      "dur": 399
+    },
+    "build": {
+      "from": 807,
+      "dur": 190
+    },
+    "honest": {
+      "from": 997,
+      "dur": 137
+    },
+    "roast": {
+      "from": 1134,
+      "dur": 126
+    },
+    "cta": {
+      "from": 1260,
+      "dur": 262
+    }
+  },
+  "cues": {
+    "01-blank": {
+      "from": 22,
+      "dur": 61,
+      "phrases": [
+        [
+          22,
+          83
+        ]
+      ]
+    },
+    "02a-nocv": {
+      "from": 113,
+      "dur": 24,
+      "phrases": [
+        [
+          113,
+          137
+        ]
+      ]
+    },
+    "02b-noidea": {
+      "from": 147,
+      "dur": 41,
+      "phrases": [
+        [
+          147,
+          188
+        ]
+      ]
+    },
+    "02c-start": {
+      "from": 198,
+      "dur": 50,
+      "phrases": [
+        [
+          198,
+          248
+        ]
+      ]
+    },
+    "03-meet": {
+      "from": 316,
+      "dur": 64,
+      "phrases": [
+        [
+          316,
+          380
+        ]
+      ]
+    },
+    "04a-seven": {
+      "from": 418,
+      "dur": 64,
+      "phrases": [
+        [
+          418,
+          482
+        ]
+      ]
+    },
+    "04b-job": {
+      "from": 496,
+      "dur": 30,
+      "phrases": [
+        [
+          496,
+          526
+        ]
+      ]
+    },
+    "04c-edu": {
+      "from": 552,
+      "dur": 30,
+      "phrases": [
+        [
+          552,
+          582
+        ]
+      ]
+    },
+    "04d-work": {
+      "from": 608,
+      "dur": 34,
+      "phrases": [
+        [
+          608,
+          642
+        ]
+      ]
+    },
+    "04e-club": {
+      "from": 668,
+      "dur": 30,
+      "phrases": [
+        [
+          668,
+          698
+        ]
+      ]
+    },
+    "04f-proud": {
+      "from": 724,
+      "dur": 43,
+      "phrases": [
+        [
+          724,
+          767
+        ]
+      ]
+    },
+    "05-build": {
+      "from": 821,
+      "dur": 146,
+      "phrases": [
+        [
+          821,
+          899
+        ],
+        [
+          905,
+          936
+        ],
+        [
+          945,
+          967
+        ]
+      ]
+    },
+    "06-honest": {
+      "from": 1007,
+      "dur": 97,
+      "phrases": [
+        [
+          1007,
+          1039
+        ],
+        [
+          1050,
+          1104
+        ]
+      ]
+    },
+    "07-roast": {
+      "from": 1144,
+      "dur": 82,
+      "phrases": [
+        [
+          1144,
+          1168
+        ],
+        [
+          1173,
+          1226
+        ]
+      ]
+    },
+    "08a-free": {
+      "from": 1282,
+      "dur": 37,
+      "phrases": [
+        [
+          1282,
+          1319
+        ]
+      ]
+    },
+    "08b-cta": {
+      "from": 1331,
+      "dur": 95,
+      "phrases": [
+        [
+          1331,
+          1381
+        ],
+        [
+          1391,
+          1426
+        ]
+      ]
+    }
+  },
+  "moments": {
+    "pageRise": 4,
+    "noCvSlam": 111,
+    "clickNoCv": 274,
+    "logoBurst": 300,
+    "wordmark": 326,
+    "builderLabel": 352,
+    "cardIn": 410,
+    "questions": [
+      490,
+      546,
+      602,
+      662,
+      718
+    ],
+    "scanStart": 891,
+    "scanLen": 62,
+    "inSeconds": 943,
+    "marker": 1011,
+    "roast": 1158,
+    "score": 1175,
+    "sharpen": 1199,
+    "wipe": 1250,
+    "badges": 1282,
+    "url": 1391,
+    "end": 1522
+  }
+}
